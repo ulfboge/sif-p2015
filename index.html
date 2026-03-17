@@ -463,12 +463,14 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
     const firebaseConfig = window.__FIREBASE_CONFIG__;
-    if (!firebaseConfig || !firebaseConfig.apiKey) {
-      throw new Error('Firebase config missing. Create firebase-config.js from firebase-config.example.js');
+    let app = null, auth = null, db = null;
+    if (firebaseConfig && firebaseConfig.apiKey) {
+      app  = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db   = getFirestore(app);
+    } else {
+      console.warn('Firebase config missing – running in read-only mode');
     }
-    const app  = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db   = getFirestore(app);
 
     // ── DATA ──────────────────────────────────────────────────────────────────
     const PLAYERS = [
@@ -514,36 +516,49 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     ['login-email','login-password'].forEach(id =>
       document.getElementById(id).addEventListener('keydown', e => { if(e.key==='Enter') window.doLogin(); }));
 
-    onAuthStateChanged(auth, user => {
-      currentUser = user;
-      const label  = document.getElementById('auth-user-label');
-      const btnIn  = document.getElementById('btn-show-login');
-      const btnOut = document.getElementById('btn-logout');
-      if (user) {
-        label.textContent = user.email;
-        btnIn.style.display = 'none'; btnOut.style.display = 'block';
-        document.getElementById('lineup-readonly-notice').style.display = 'none';
-        document.getElementById('btn-reset').style.display = 'block';
-        document.getElementById('btn-save-match').disabled = false;
-        document.getElementById('public-matches-view').style.display = 'none';
-        document.getElementById('admin-matches-view').style.display = 'block';
-        enableDrag(true);
-      } else {
-        label.textContent = '';
-        btnIn.style.display = 'block'; btnOut.style.display = 'none';
-        document.getElementById('lineup-readonly-notice').style.display = 'block';
-        document.getElementById('btn-reset').style.display = 'none';
-        document.getElementById('btn-link-lineup').style.display = 'none';
-        document.getElementById('btn-save-match').disabled = true;
-        document.getElementById('public-matches-view').style.display = 'block';
-        document.getElementById('admin-matches-view').style.display = 'none';
-        enableDrag(false);
-      }
-      updateLinkButton();
+    if (auth) {
+      onAuthStateChanged(auth, user => {
+        currentUser = user;
+        const label  = document.getElementById('auth-user-label');
+        const btnIn  = document.getElementById('btn-show-login');
+        const btnOut = document.getElementById('btn-logout');
+        if (user) {
+          label.textContent = user.email;
+          btnIn.style.display = 'none'; btnOut.style.display = 'block';
+          document.getElementById('lineup-readonly-notice').style.display = 'none';
+          document.getElementById('btn-reset').style.display = 'block';
+          document.getElementById('btn-save-match').disabled = false;
+          document.getElementById('public-matches-view').style.display = 'none';
+          document.getElementById('admin-matches-view').style.display = 'block';
+          enableDrag(true);
+        } else {
+          label.textContent = '';
+          btnIn.style.display = 'block'; btnOut.style.display = 'none';
+          document.getElementById('lineup-readonly-notice').style.display = 'block';
+          document.getElementById('btn-reset').style.display = 'none';
+          document.getElementById('btn-link-lineup').style.display = 'none';
+          document.getElementById('btn-save-match').disabled = true;
+          document.getElementById('public-matches-view').style.display = 'block';
+          document.getElementById('admin-matches-view').style.display = 'none';
+          enableDrag(false);
+        }
+        updateLinkButton();
+        renderMatchList();
+        renderPublicMatches();
+        renderStats();
+      });
+    } else {
+      // No Firebase config – render page in read-only mode
+      document.getElementById('lineup-readonly-notice').style.display = 'block';
+      document.getElementById('btn-reset').style.display = 'none';
+      document.getElementById('btn-link-lineup').style.display = 'none';
+      document.getElementById('public-matches-view').style.display = 'block';
+      document.getElementById('admin-matches-view').style.display = 'none';
+      enableDrag(false);
       renderMatchList();
       renderPublicMatches();
       renderStats();
-    });
+    }
 
     // ── TABS ──────────────────────────────────────────────────────────────────
     window.switchTab = t => {
@@ -997,7 +1012,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     Object.keys(ROW_CONFIG).forEach(k=>pitchState[k]=Array(ROW_CONFIG[k].max).fill(null));
     initListDropTargets();
     render();
-    loadMatches();
+    if (db) loadMatches();
     document.getElementById('f-date').valueAsDate=new Date();
   </script>
 </body>
