@@ -485,6 +485,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       {name:"Romeo", role:"Tränare"},
       {name:"Johan", role:"Lagledare"}
     ];
+    const DEFAULT_MATCH_STAFF = ["Johan", "Romeo"];
     const numMap = {};
     PLAYERS.forEach(p => numMap[p.name] = p.num);
 
@@ -548,9 +549,8 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
           enableDrag(false);
         }
         updateLinkButton();
-        renderMatchList();
-        renderPublicMatches();
-        renderStats();
+        if (db) loadMatches();
+        else { renderMatchList(); renderPublicMatches(); renderStats(); }
       });
     } else {
       // No Firebase config – render page in read-only mode
@@ -763,6 +763,25 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     };
 
     // ── FIRESTORE ─────────────────────────────────────────────────────────────
+    function lineupNeedsStaffBackfill(lineup){
+      return lineup && (!Array.isArray(lineup.staffBench) || !lineup.staffBench.filter(Boolean).length);
+    }
+    function withDefaultStaff(lineup){
+      return {
+        ...lineup,
+        staffBench: [...DEFAULT_MATCH_STAFF]
+      };
+    }
+    async function backfillLegacyMatchStaff(){
+      if(!currentUser || !db || !matches.length) return;
+      const toUpdate = matches.filter(m => lineupNeedsStaffBackfill(m.lineup));
+      if(!toUpdate.length) return;
+      await Promise.all(toUpdate.map(async m => {
+        const lineup = withDefaultStaff(m.lineup);
+        await updateDoc(doc(db,'matches',m.id), { lineup });
+        m.lineup = lineup;
+      }));
+    }
     async function loadMatches(){
       try{
         const q=query(collection(db,'matches'),orderBy('date','desc'));
@@ -772,6 +791,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         try{const snap=await getDocs(collection(db,'matches'));matches=snap.docs.map(d=>({id:d.id,...d.data()}));matches.sort((a,b)=>(b.date||'').localeCompare(a.date||''));}
         catch(e2){matches=[];}
       }
+      try{ await backfillLegacyMatchStaff(); }catch(e3){ console.warn('Staff backfill skipped:', e3); }
       renderMatchList(); renderPublicMatches(); renderStats();
     }
 
