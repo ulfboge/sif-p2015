@@ -501,12 +501,17 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     let activeLinkId = null;
     let pubFilter    = 'all';
     let statsFilter  = 'all';
+    let dragData = null, dragEnabled = false;
 
     // ── AUTH ──────────────────────────────────────────────────────────────────
     window.openLoginModal  = () => document.getElementById('login-modal').classList.add('open');
     window.closeLoginModal = () => { document.getElementById('login-modal').classList.remove('open'); document.getElementById('login-error').textContent=''; };
-    window.doLogout = () => signOut(auth);
+    window.doLogout = () => { if (auth) signOut(auth); };
     window.doLogin  = async () => {
+      if (!auth) {
+        document.getElementById('login-error').textContent = 'Inloggning ej tillgänglig just nu';
+        return;
+      }
       const email = document.getElementById('login-email').value.trim();
       const pass  = document.getElementById('login-password').value;
       document.getElementById('login-error').textContent = '';
@@ -568,7 +573,6 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     };
 
     // ── DRAG ──────────────────────────────────────────────────────────────────
-    let dragData = null, dragEnabled = false;
     function enableDrag(on) { dragEnabled = on; render(); }
 
     // ── HELPERS ───────────────────────────────────────────────────────────────
