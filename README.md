@@ -38,6 +38,8 @@ Workflow skapar `firebase-config.js` vid deploy och publicerar sidan utan att ny
 
 Om en tidigare nyckel har legat i git-historiken: rotera/revocera nyckeln i Google Cloud Console och uppdatera sedan `firebase-config.js` med den nya.
 
+Se även `SECURITY_NOTES.md` för incident-playbook och felsökningschecklista.
+
 ## Tillgång
 
 Kontakta lagets tränare för inloggningsuppgifter.
