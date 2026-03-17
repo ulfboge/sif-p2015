@@ -24,7 +24,15 @@ För att undvika att exponera nycklar i repot läses Firebase-konfiguration frå
 2. Lägg in korrekt Firebase `apiKey` i `firebase-config.js`
 3. Lämna `firebase-config.js` ocommittad (filen är ignorerad via `.gitignore`)
 
-Vid publicering behöver motsvarande fil finnas på hosten.
+## GitHub Pages (produktion)
+
+Deploy sker via GitHub Actions i `.github/workflows/deploy-pages.yml`.
+
+1. Lägg till repository secret: `FIREBASE_API_KEY`
+2. Gå till repository Settings → Pages och välj **GitHub Actions** som source
+3. Pusha till `main` (eller kör workflow manuellt)
+
+Workflow skapar `firebase-config.js` vid deploy och publicerar sidan utan att nyckeln lagras i git-historiken.
 
 ## Säkerhet
 
