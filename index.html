@@ -246,9 +246,9 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
   </div>
 
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('lineup')">⚽ Laguppställning</div>
-    <div class="tab" onclick="switchTab('matches')">📋 Matcher</div>
-    <div class="tab" onclick="switchTab('stats')">📊 Statistik</div>
+    <div class="tab active" id="tab-btn-lineup" onclick="switchTab('lineup')">⚽ Laguppställning</div>
+    <div class="tab" id="tab-btn-matches" onclick="switchTab('matches')">📋 Matcher</div>
+    <div class="tab" id="tab-btn-stats" onclick="switchTab('stats')">📊 Statistik</div>
   </div>
 
   <!-- TAB: LINEUP -->
@@ -504,6 +504,13 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     let statsFilter  = 'all';
     let dragData = null, dragEnabled = false;
 
+    function setLineupTabVisibility(isVisible){
+      const lineupBtn = document.getElementById('tab-btn-lineup');
+      const lineupTab = document.getElementById('tab-lineup');
+      if (lineupBtn) lineupBtn.style.display = isVisible ? '' : 'none';
+      if (lineupTab && !isVisible) lineupTab.classList.remove('active');
+    }
+
     // ── AUTH ──────────────────────────────────────────────────────────────────
     window.openLoginModal  = () => document.getElementById('login-modal').classList.add('open');
     window.closeLoginModal = () => { document.getElementById('login-modal').classList.remove('open'); document.getElementById('login-error').textContent=''; };
@@ -529,6 +536,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         const btnIn  = document.getElementById('btn-show-login');
         const btnOut = document.getElementById('btn-logout');
         if (user) {
+          setLineupTabVisibility(true);
           label.textContent = user.email;
           btnIn.style.display = 'none'; btnOut.style.display = 'block';
           document.getElementById('lineup-readonly-notice').style.display = 'none';
@@ -538,6 +546,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
           document.getElementById('admin-matches-view').style.display = 'block';
           enableDrag(true);
         } else {
+          setLineupTabVisibility(false);
           label.textContent = '';
           btnIn.style.display = 'block'; btnOut.style.display = 'none';
           document.getElementById('lineup-readonly-notice').style.display = 'block';
@@ -547,6 +556,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
           document.getElementById('public-matches-view').style.display = 'block';
           document.getElementById('admin-matches-view').style.display = 'none';
           enableDrag(false);
+          switchTab('matches');
         }
         updateLinkButton();
         if (db) loadMatches();
@@ -554,23 +564,27 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       });
     } else {
       // No Firebase config – render page in read-only mode
+      setLineupTabVisibility(false);
       document.getElementById('lineup-readonly-notice').style.display = 'block';
       document.getElementById('btn-reset').style.display = 'none';
       document.getElementById('btn-link-lineup').style.display = 'none';
       document.getElementById('public-matches-view').style.display = 'block';
       document.getElementById('admin-matches-view').style.display = 'none';
       enableDrag(false);
+      switchTab('matches');
       renderMatchList();
       renderPublicMatches();
       renderStats();
     }
 
     // ── TABS ──────────────────────────────────────────────────────────────────
-    window.switchTab = t => {
+    function switchTab(t) {
+      if (t === 'lineup' && !currentUser) t = 'matches';
       document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active',['lineup','matches','stats'][i]===t));
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.getElementById('tab-'+t).classList.add('active');
-    };
+    }
+    window.switchTab = switchTab;
 
     // ── DRAG ──────────────────────────────────────────────────────────────────
     function enableDrag(on) { dragEnabled = on; render(); }
