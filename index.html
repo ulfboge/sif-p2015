@@ -803,11 +803,11 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     }
     async function loadMatches(){
       try{
-        const q=query(collection(db,'matches'),orderBy('date','desc'));
+        const q=query(collection(db,'matches'),orderBy('date','asc'));
         const snap=await getDocs(q);
         matches=snap.docs.map(d=>({id:d.id,...d.data()}));
       }catch(e){
-        try{const snap=await getDocs(collection(db,'matches'));matches=snap.docs.map(d=>({id:d.id,...d.data()}));matches.sort((a,b)=>(b.date||'').localeCompare(a.date||''));}
+        try{const snap=await getDocs(collection(db,'matches'));matches=snap.docs.map(d=>({id:d.id,...d.data()}));matches.sort((a,b)=>(a.date||'').localeCompare(b.date||''));}
         catch(e2){matches=[];}
       }
       try{ await backfillLegacyMatchStaff(); }catch(e3){ console.warn('Staff backfill skipped:', e3); }
