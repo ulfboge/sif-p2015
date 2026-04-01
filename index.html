@@ -125,6 +125,12 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 .venue-badge.home{background:rgba(245,216,0,.15);color:var(--yellow);border:1px solid rgba(245,216,0,.3);}
 .venue-badge.away{background:rgba(100,180,255,.1);color:#6ab4ff;border:1px solid rgba(100,180,255,.25);}
 .type-badge{background:rgba(255,255,255,.07);color:var(--text-muted);border:1px solid #333;}
+.lag-badge{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-right:8px;vertical-align:middle;white-space:nowrap;}
+.lag-badge.lag-gul{background:rgba(234,179,8,.2);color:#facc15;border:1px solid rgba(250,204,21,.35);}
+.lag-badge.lag-svart{background:rgba(120,120,130,.25);color:#d4d4d8;border:1px solid #555;}
+.filter-bar-wrap{margin-bottom:16px;}
+.filter-bar-wrap .filter-bar{margin-bottom:8px;}
+.filter-lag-label{font-size:12px;color:var(--text-muted);margin:0 0 6px 0;font-weight:600;}
 .scorers-cell{font-size:11px;color:#aaa;}
 /* ADMIN MATCHES */
 .matches-layout{display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start;}
@@ -328,12 +334,20 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     <div id="public-matches-view">
       <div class="public-matches-wrap">
         <h2>Matcher <span id="pub-match-count" style="font-size:14px;color:var(--text-muted);font-weight:600;"></span></h2>
-        <div class="filter-bar" id="pub-filter-bar">
-          <button class="filter-btn active" data-filter="all" onclick="setPublicFilter('all')">Alla</button>
-          <button class="filter-btn" data-filter="Serie" onclick="setPublicFilter('Serie')">Serie</button>
-          <button class="filter-btn" data-filter="Träningsmatch" onclick="setPublicFilter('Träningsmatch')">Träningsmatch</button>
-          <button class="filter-btn" data-filter="S:t Erikscupen" onclick="setPublicFilter('S:t Erikscupen')">S:t Erikscupen</button>
-          <button class="filter-btn" data-filter="Cup" onclick="setPublicFilter('Cup')">Cup</button>
+        <div class="filter-bar-wrap">
+          <div class="filter-bar" id="pub-filter-bar">
+            <button class="filter-btn active" data-filter="all" onclick="setPublicFilter('all')">Alla</button>
+            <button class="filter-btn" data-filter="Serie" onclick="setPublicFilter('Serie')">Serie</button>
+            <button class="filter-btn" data-filter="Träningsmatch" onclick="setPublicFilter('Träningsmatch')">Träningsmatch</button>
+            <button class="filter-btn" data-filter="S:t Erikscupen" onclick="setPublicFilter('S:t Erikscupen')">S:t Erikscupen</button>
+            <button class="filter-btn" data-filter="Cup" onclick="setPublicFilter('Cup')">Cup</button>
+          </div>
+          <p class="filter-lag-label">Vårt lag (P2015)</p>
+          <div class="filter-bar" id="pub-lag-filter-bar">
+            <button class="filter-btn active" data-lag-filter="all" onclick="setPublicLagFilter('all')">Alla lag</button>
+            <button class="filter-btn" data-lag-filter="Gul" onclick="setPublicLagFilter('Gul')">Gul</button>
+            <button class="filter-btn" data-lag-filter="Svart" onclick="setPublicLagFilter('Svart')">Svart</button>
+          </div>
         </div>
         <table class="matches-table">
           <thead>
@@ -364,6 +378,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
           <div class="form-row">
             <div class="form-group"><label>Hemma / Borta</label><select id="f-venue"><option value="home">Hemma</option><option value="away">Borta</option></select></div>
             <div class="form-group"><label>Spelform</label><select id="f-type"><option value="Serie">Serie</option><option value="Träningsmatch">Träningsmatch</option><option value="S:t Erikscupen">S:t Erikscupen</option><option value="Cup">Cup</option><option value="Annan">Annan</option></select></div>
+            <div class="form-group" style="max-width:140px;"><label>Vårt lag</label><select id="f-lag"><option value="">–</option><option value="Gul">Gul</option><option value="Svart">Svart</option></select></div>
           </div>
           <div class="form-row">
             <div class="form-group" style="max-width:80px;"><label>Mål för</label><input type="number" id="f-goals-for" min="0" placeholder="–"></div>
@@ -381,6 +396,11 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         </div>
         <div class="match-list-panel">
           <h2>Sparade matcher <span id="adm-match-count" style="font-size:14px;color:var(--text-muted);font-weight:600;"></span></h2>
+          <div class="filter-bar" id="admin-lag-filter-bar" style="margin-bottom:12px;">
+            <button class="filter-btn active" data-admin-lag="all" onclick="setAdminLagFilter('all')">Alla lag</button>
+            <button class="filter-btn" data-admin-lag="Gul" onclick="setAdminLagFilter('Gul')">Gul</button>
+            <button class="filter-btn" data-admin-lag="Svart" onclick="setAdminLagFilter('Svart')">Svart</button>
+          </div>
           <div id="admin-match-list"><div class="no-matches"><span class="spinner"></span></div></div>
         </div>
       </div>
@@ -391,12 +411,20 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
   <div class="tab-content" id="tab-stats">
     <div class="stats-layout">
       <div>
-        <div class="stats-filter-bar" id="stats-filter-bar">
-          <button class="filter-btn active" data-filter="all" onclick="setStatsFilter('all')">Alla matcher</button>
-          <button class="filter-btn" data-filter="Serie" onclick="setStatsFilter('Serie')">Serie</button>
-          <button class="filter-btn" data-filter="Träningsmatch" onclick="setStatsFilter('Träningsmatch')">Träningsmatch</button>
-          <button class="filter-btn" data-filter="S:t Erikscupen" onclick="setStatsFilter('S:t Erikscupen')">S:t Erikscupen</button>
-          <button class="filter-btn" data-filter="Cup" onclick="setStatsFilter('Cup')">Cup</button>
+        <div class="filter-bar-wrap">
+          <div class="stats-filter-bar" id="stats-filter-bar">
+            <button class="filter-btn active" data-filter="all" onclick="setStatsFilter('all')">Alla matcher</button>
+            <button class="filter-btn" data-filter="Serie" onclick="setStatsFilter('Serie')">Serie</button>
+            <button class="filter-btn" data-filter="Träningsmatch" onclick="setStatsFilter('Träningsmatch')">Träningsmatch</button>
+            <button class="filter-btn" data-filter="S:t Erikscupen" onclick="setStatsFilter('S:t Erikscupen')">S:t Erikscupen</button>
+            <button class="filter-btn" data-filter="Cup" onclick="setStatsFilter('Cup')">Cup</button>
+          </div>
+          <p class="filter-lag-label">Vårt lag</p>
+          <div class="stats-filter-bar" id="stats-lag-filter-bar">
+            <button class="filter-btn active" data-stats-lag="all" onclick="setStatsLagFilter('all')">Alla lag</button>
+            <button class="filter-btn" data-stats-lag="Gul" onclick="setStatsLagFilter('Gul')">Gul</button>
+            <button class="filter-btn" data-stats-lag="Svart" onclick="setStatsLagFilter('Svart')">Svart</button>
+          </div>
         </div>
       </div>
       <div class="summary-numbers" id="stats-summary"></div>
@@ -501,8 +529,11 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     let matches      = [];
     let editingId    = null;
     let activeLinkId = null;
-    let pubFilter    = 'all';
-    let statsFilter  = 'all';
+    let pubFilter     = 'all';
+    let pubLagFilter  = 'all';
+    let statsFilter   = 'all';
+    let statsLagFilter= 'all';
+    let adminLagFilter= 'all';
     let dragData = null, dragEnabled = false;
 
     function setLineupTabVisibility(isVisible){
@@ -814,26 +845,51 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       renderMatchList(); renderPublicMatches(); renderStats();
     }
 
+    function resolveMatchLag(m){
+      if(m.lag==='Gul'||m.lag==='Svart')return m.lag;
+      const n=(m.notes||'').trim();
+      if(n.startsWith('Gul ·'))return 'Gul';
+      if(n.startsWith('Svart ·'))return 'Svart';
+      return '';
+    }
+    function lagBadgeHtml(lag){
+      if(lag==='Gul')return '<span class="lag-badge lag-gul">Gul</span>';
+      if(lag==='Svart')return '<span class="lag-badge lag-svart">Svart</span>';
+      return '';
+    }
+
     // ── PUBLIC MATCHES ────────────────────────────────────────────────────────
     window.setPublicFilter=f=>{
       pubFilter=f;
       document.querySelectorAll('#pub-filter-bar .filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.filter===f));
       renderPublicMatches();
     };
+    window.setPublicLagFilter=lag=>{
+      pubLagFilter=lag;
+      document.querySelectorAll('#pub-lag-filter-bar .filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.lagFilter===lag));
+      renderPublicMatches();
+    };
+    window.setAdminLagFilter=lag=>{
+      adminLagFilter=lag;
+      document.querySelectorAll('#admin-lag-filter-bar .filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.adminLag===lag));
+      renderMatchList();
+    };
     function renderPublicMatches(){
-      const filtered=pubFilter==='all'?matches:matches.filter(m=>m.type===pubFilter);
+      let filtered=pubFilter==='all'?matches.slice():matches.filter(m=>m.type===pubFilter);
+      if(pubLagFilter!=='all')filtered=filtered.filter(m=>resolveMatchLag(m)===pubLagFilter);
       const tbody=document.getElementById('pub-matches-tbody');
       const noEl=document.getElementById('pub-no-matches');
-      document.getElementById('pub-match-count').textContent='('+matches.length+')';
+      document.getElementById('pub-match-count').textContent='('+filtered.length+')';
       if(!filtered.length){tbody.innerHTML='';noEl.style.display='block';return;}
       noEl.style.display='none';
       tbody.innerHTML=filtered.map(m=>{
         const hasRes=m.goalsFor!=null&&m.goalsAgainst!=null;
         const dateStr=m.date?new Date(m.date+'T12:00:00').toLocaleDateString('sv-SE',{day:'numeric',month:'short'}): '–';
         const scorerStr=(m.scorers||[]).map(s=>s.name+(s.goals>1?' ('+s.goals+')':'')).join(', ');
+        const lag=resolveMatchLag(m);
         return '<tr class="'+(m.lineup?'clickable':'')+'" '+(m.lineup?'onclick="showLineup(\''+m.id+'\')"':'')+' title="'+(m.lineup?'Klicka för att se laguppställning':'')+'">'+
           '<td>'+dateStr+'</td>'+
-          '<td style="font-weight:600;">'+m.opponent+'</td>'+
+          '<td style="font-weight:600;">'+lagBadgeHtml(lag)+m.opponent+'</td>'+
           '<td><span class="venue-badge '+(m.venue==='home'?'home':'away')+'">'+(m.venue==='home'?'H':'B')+'</span></td>'+
           '<td><span class="type-badge">'+m.type+'</span></td>'+
           '<td class="result-cell'+(hasRes?'':' no-res')+'">'+(hasRes?m.goalsFor+'–'+m.goalsAgainst:'?–?')+'</td>'+
@@ -847,18 +903,23 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     function renderMatchList(){
       const list=document.getElementById('admin-match-list');
       if(!list)return;
-      document.getElementById('adm-match-count').textContent='('+matches.length+')';
+      let listMatches=matches.slice();
+      if(adminLagFilter!=='all')listMatches=listMatches.filter(m=>resolveMatchLag(m)===adminLagFilter);
+      document.getElementById('adm-match-count').textContent='('+listMatches.length+')';
       if(!matches.length){list.innerHTML='<div class="no-matches">Inga matcher sparade ännu</div>';return;}
+      if(!listMatches.length){list.innerHTML='<div class="no-matches">Inga matcher för valt lag</div>';return;}
       list.innerHTML='';
-      matches.forEach(m=>{
+      listMatches.forEach(m=>{
         const hasRes=m.goalsFor!=null&&m.goalsAgainst!=null;
         const dateStr=m.date?new Date(m.date+'T12:00:00').toLocaleDateString('sv-SE',{day:'numeric',month:'short',year:'numeric'}):'';
         const scorerStr=(m.scorers||[]).map(s=>s.name+(s.goals>1?' ('+s.goals+')':'')).join(', ');
+        const lag=resolveMatchLag(m);
         const card=document.createElement('div');
         card.className='match-card'+(activeLinkId===m.id?' selected':'');
         card.innerHTML=
           '<div class="match-card-header">'
             +'<span class="venue-badge '+(m.venue==='home'?'home':'away')+'">'+(m.venue==='home'?'HEMMA':'BORTA')+'</span>'
+            +(lag?'<span class="lag-badge '+(lag==='Gul'?'lag-gul':'lag-svart')+'" style="margin-left:4px;">'+lag+'</span>':'')
             +'<span class="type-badge" style="margin-left:4px;">'+m.type+'</span>'
             +'<div class="match-result-badge'+(hasRes?'':' no-res')+'">'+(hasRes?m.goalsFor+'–'+m.goalsAgainst:'?–?')+'</div>'
           +'</div>'
@@ -890,9 +951,10 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       if(!opponent){alert('Ange motståndare');return;}
       const gf=document.getElementById('f-goals-for').value;
       const ga=document.getElementById('f-goals-against').value;
+      const lagPick=document.getElementById('f-lag').value;
       const data={opponent,date:document.getElementById('f-date').value,venue:document.getElementById('f-venue').value,
         type:document.getElementById('f-type').value,goalsFor:gf!==''?+gf:null,goalsAgainst:ga!==''?+ga:null,
-        notes:document.getElementById('f-notes').value.trim(),scorers:getScorers(),lineup:null};
+        notes:document.getElementById('f-notes').value.trim(),lag:lagPick||null,scorers:getScorers(),lineup:null};
       const btn=document.getElementById('btn-save-match');
       btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
       try{
@@ -907,7 +969,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       document.getElementById('f-opponent').value='';document.getElementById('f-date').value='';
       document.getElementById('f-venue').value='home';document.getElementById('f-type').value='Serie';
       document.getElementById('f-goals-for').value='';document.getElementById('f-goals-against').value='';
-      document.getElementById('f-notes').value='';document.getElementById('scorer-rows').innerHTML='';
+      document.getElementById('f-notes').value='';document.getElementById('f-lag').value='';document.getElementById('scorer-rows').innerHTML='';
     }
     window.cancelEdit=()=>{editingId=null;document.getElementById('form-title').textContent='Ny match';document.getElementById('btn-cancel-edit').style.display='none';clearForm();};
     window.editMatch=id=>{
@@ -917,7 +979,10 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       document.getElementById('f-opponent').value=m.opponent||'';document.getElementById('f-date').value=m.date||'';
       document.getElementById('f-venue').value=m.venue||'home';document.getElementById('f-type').value=m.type||'Serie';
       document.getElementById('f-goals-for').value=m.goalsFor!=null?m.goalsFor:'';document.getElementById('f-goals-against').value=m.goalsAgainst!=null?m.goalsAgainst:'';
-      document.getElementById('f-notes').value=m.notes||'';document.getElementById('scorer-rows').innerHTML='';
+      document.getElementById('f-notes').value=m.notes||'';
+      const lagVal=m.lag==='Gul'||m.lag==='Svart'?m.lag:resolveMatchLag(m);
+      document.getElementById('f-lag').value=(lagVal==='Gul'||lagVal==='Svart')?lagVal:'';
+      document.getElementById('scorer-rows').innerHTML='';
       (m.scorers||[]).forEach(s=>addScorerRow(s.name,s.goals));
       switchTab('matches');document.querySelector('.match-form-panel').scrollIntoView({behavior:'smooth'});
     };
@@ -935,6 +1000,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         await addDoc(col,{
           opponent:m.opponent,date:m.date,venue:m.venue,type:m.type,
           notes:m.lag+' · '+m.tid+' · '+m.plan,
+          lag:m.lag||null,
           goalsFor:null,goalsAgainst:null,scorers:[],lineup:null
         });
         ok++;
@@ -971,7 +1037,8 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       const hasRes=m.goalsFor!=null&&m.goalsAgainst!=null;
       const dateStr=m.date?new Date(m.date+'T12:00:00').toLocaleDateString('sv-SE',{day:'numeric',month:'short',year:'numeric'}):'';
       document.getElementById('modal-title').textContent=m.opponent;
-      document.getElementById('modal-meta').textContent=(m.venue==='home'?'Hemma':'Borta')+' · '+m.type+(dateStr?' · '+dateStr:'')+(hasRes?' · '+m.goalsFor+'–'+m.goalsAgainst:'');
+      const lagStr=resolveMatchLag(m);
+      document.getElementById('modal-meta').textContent=(m.venue==='home'?'Hemma':'Borta')+' · '+m.type+(lagStr?' · '+lagStr:'')+(dateStr?' · '+dateStr:'')+(hasRes?' · '+m.goalsFor+'–'+m.goalsAgainst:'');
       const rows={gk:'modal-gk',def:'modal-def',dmid:'modal-dmid',mid:'modal-mid',fwd:'modal-fwd'};
       Object.entries(rows).forEach(([row,elId])=>{
         const el=document.getElementById(elId);el.innerHTML='';
@@ -1005,9 +1072,15 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       document.querySelectorAll('#stats-filter-bar .filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.filter===f));
       renderStats();
     };
+    window.setStatsLagFilter=lag=>{
+      statsLagFilter=lag;
+      document.querySelectorAll('#stats-lag-filter-bar .filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.statsLag===lag));
+      renderStats();
+    };
 
     function renderStats(){
-      const ms=statsFilter==='all'?matches:matches.filter(m=>m.type===statsFilter);
+      let ms=statsFilter==='all'?matches.slice():matches.filter(m=>m.type===statsFilter);
+      if(statsLagFilter!=='all')ms=ms.filter(m=>resolveMatchLag(m)===statsLagFilter);
       const played=ms.filter(m=>m.goalsFor!=null&&m.goalsAgainst!=null);
       const wins=played.filter(m=>m.goalsFor>m.goalsAgainst).length;
       const draws=played.filter(m=>m.goalsFor===m.goalsAgainst).length;

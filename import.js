@@ -57,6 +57,7 @@
         venue: m.venue,
         type: m.type,
         notes: m.lag + ' · ' + m.tid + ' · ' + m.plan,
+        lag: m.lag || null,
         goalsFor: null,
         goalsAgainst: null,
         scorers: [],
