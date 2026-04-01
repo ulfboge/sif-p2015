@@ -376,6 +376,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
             <button class="btn-add-scorer" onclick="addScorerRow()">+</button>
           </div>
           <button class="btn-primary" onclick="saveMatch()" id="btn-save-match" style="margin-top:12px;" disabled>💾 Spara match</button>
+          <button class="btn-action" type="button" onclick="importMatchSchedule()" id="btn-import-schedule" style="margin-top:8px;display:none;">📥 Importera spelprogram (JSON)</button>
           <button class="btn-action" id="btn-cancel-edit" style="display:none;margin-top:8px;" onclick="cancelEdit()">✕ Avbryt redigering</button>
         </div>
         <div class="match-list-panel">
@@ -542,10 +543,14 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
           document.getElementById('lineup-readonly-notice').style.display = 'none';
           document.getElementById('btn-reset').style.display = 'block';
           document.getElementById('btn-save-match').disabled = false;
+          const biShow = document.getElementById('btn-import-schedule');
+          if (biShow) biShow.style.display = db ? 'block' : 'none';
           document.getElementById('public-matches-view').style.display = 'none';
           document.getElementById('admin-matches-view').style.display = 'block';
           enableDrag(true);
         } else {
+          const bi = document.getElementById('btn-import-schedule');
+          if (bi) bi.style.display = 'none';
           setLineupTabVisibility(false);
           label.textContent = '';
           btnIn.style.display = 'block'; btnOut.style.display = 'none';
@@ -922,6 +927,42 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       if(activeLinkId===id){activeLinkId=null;updateLinkButton();}
       await loadMatches();
     };
+    async function importMatchScheduleRows(rows){
+      if(!currentUser||!db)throw new Error('Inte inloggad eller ingen databas');
+      const col=collection(db,'matches');
+      let ok=0;
+      for(const m of rows){
+        await addDoc(col,{
+          opponent:m.opponent,date:m.date,venue:m.venue,type:m.type,
+          notes:m.lag+' · '+m.tid+' · '+m.plan,
+          goalsFor:null,goalsAgainst:null,scorers:[],lineup:null
+        });
+        ok++;
+        console.log('✓ ('+ok+'/'+rows.length+') '+m.date+' '+m.opponent);
+      }
+      return ok;
+    }
+    window.importMatchSchedule=async()=>{
+      if(!currentUser||!db){alert('Logga in först.');return;}
+      if(!confirm('Importera alla matcher från import-matches.json? Varje körning lägger till nya rader (dubbletter om du kör om).'))return;
+      const btn=document.getElementById('btn-import-schedule');
+      if(btn)btn.disabled=true;
+      try{
+        const res=await fetch('import-matches.json');
+        if(!res.ok)throw new Error('Kunde inte läsa import-matches.json (HTTP '+res.status+')');
+        const rows=await res.json();
+        if(!Array.isArray(rows)||!rows.length)throw new Error('Ogiltig JSON');
+        const n=await importMatchScheduleRows(rows);
+        await loadMatches();
+        alert('Klart! '+n+' matcher importerade.');
+      }catch(e){
+        alert('Import misslyckades: '+e.message);
+        console.error(e);
+      }finally{
+        if(btn)btn.disabled=false;
+      }
+    };
+    window.importSeasonMatches=window.importMatchSchedule;
     window.linkToLineup=id=>{if(!currentUser)return;activeLinkId=id;updateLinkButton();switchTab('lineup');};
 
     // ── LINEUP MODAL ──────────────────────────────────────────────────────────
