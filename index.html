@@ -1201,15 +1201,23 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         r.gf+=m.goalsFor||0; r.ga+=m.goalsAgainst||0;
       });
       const h2hSorted=Object.entries(h2h).sort((a,b)=>(b[1].w+b[1].d+b[1].l)-(a[1].w+a[1].d+a[1].l));
-      document.getElementById('stats-h2h').innerHTML=h2hSorted.length?h2hSorted.map(([opp,r])=>
-        '<div class="h2h-row">'
-          +'<span class="h2h-opp">'+opp+'</span>'
-          +'<span class="h2h-rec" style="color:#7fda5f;">'+r.w+'V</span>'
-          +'<span class="h2h-rec" style="color:#d4d460;">'+r.d+'O</span>'
-          +'<span class="h2h-rec" style="color:#da5f5f;">'+r.l+'F</span>'
-          +'<span class="h2h-score">'+r.gf+'–'+r.ga+'</span>'
+      document.getElementById('stats-h2h').innerHTML=h2hSorted.length?
+        '<div class="h2h-row" style="border-bottom:1px solid #333;padding-bottom:4px;margin-bottom:2px;">'
+          +'<span></span>'
+          +'<span class="h2h-rec" style="color:#7fda5f;">V</span>'
+          +'<span class="h2h-rec" style="color:#d4d460;">O</span>'
+          +'<span class="h2h-rec" style="color:#da5f5f;">F</span>'
+          +'<span class="h2h-score" style="color:var(--text-muted);">Mål</span>'
         +'</div>'
-      ).join(''):'<div style="color:var(--text-muted);font-size:13px;">Inga matcher med resultat</div>';
+        +h2hSorted.map(([opp,r])=>
+          '<div class="h2h-row">'
+            +'<span class="h2h-opp">'+opp+'</span>'
+            +'<span class="h2h-rec" style="color:#7fda5f;">'+r.w+'</span>'
+            +'<span class="h2h-rec" style="color:#d4d460;">'+r.d+'</span>'
+            +'<span class="h2h-rec" style="color:#da5f5f;">'+r.l+'</span>'
+            +'<span class="h2h-score">'+r.gf+'–'+r.ga+'</span>'
+          +'</div>'
+        ).join(''):'<div style="color:var(--text-muted);font-size:13px;">Inga matcher med resultat</div>';
 
       // Home vs Away
       const home=played.filter(m=>m.venue==='home');
