@@ -382,13 +382,25 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
           </div>
           <div class="form-row">
             <div class="form-group" style="max-width:80px;"><label>Mål för</label><input type="number" id="f-goals-for" min="0" placeholder="–"></div>
-            <div class="form-group" style="max-width:80px;"><label>Mål emot</label><input type="number" id="f-goals-against" min="0" placeholder="–"></div>
+            <div class="form-group">
+              <label>Mål emot (P1&nbsp;/&nbsp;P2&nbsp;/&nbsp;P3)</label>
+              <div style="display:flex;gap:4px;">
+                <input type="number" id="f-ga-p1" min="0" placeholder="P1" style="width:48px;" oninput="updateTotalGA()">
+                <input type="number" id="f-ga-p2" min="0" placeholder="P2" style="width:48px;" oninput="updateTotalGA()">
+                <input type="number" id="f-ga-p3" min="0" placeholder="P3" style="width:48px;" oninput="updateTotalGA()">
+              </div>
+            </div>
             <div class="form-group"><label>Anteckningar</label><input type="text" id="f-notes" placeholder="Fritext…"></div>
           </div>
           <div class="scorer-section">
             <label>Målgörare</label>
             <div id="scorer-rows"></div>
             <button class="btn-add-scorer" onclick="addScorerRow()">+</button>
+          </div>
+          <div class="scorer-section" style="margin-top:8px;">
+            <label>Assist</label>
+            <div id="assist-rows"></div>
+            <button class="btn-add-scorer" onclick="addAssistRow()">+</button>
           </div>
           <button class="btn-primary" onclick="saveMatch()" id="btn-save-match" style="margin-top:12px;" disabled>💾 Spara match</button>
           <button class="btn-action" type="button" onclick="importMatchSchedule()" id="btn-import-schedule" style="margin-top:8px;display:none;">📥 Importera spelprogram (JSON)</button>
@@ -430,7 +442,9 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       <div class="summary-numbers" id="stats-summary"></div>
       <div class="stats-grid">
         <div class="stat-card"><h3>Skytteliga</h3><div id="stats-scorers"></div></div>
+        <div class="stat-card"><h3>Assistliga</h3><div id="stats-assists"></div></div>
         <div class="stat-card"><h3>Formkurva (senaste 10)</h3><div id="stats-form"></div></div>
+        <div class="stat-card"><h3>Hållna halvlekar</h3><div id="stats-cleanhalves"></div></div>
         <div class="stat-card"><h3>Inbördes möten</h3><div id="stats-h2h"></div></div>
         <div class="stat-card"><h3>Hemma vs Borta</h3><div id="stats-venue"></div></div>
       </div>
@@ -943,18 +957,33 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       row.innerHTML='<select>'+opts+'</select><input type="number" value="'+goals+'" min="1" max="20"><button class="btn-rem-scorer" onclick="this.parentElement.remove()">✕</button>';
       document.getElementById('scorer-rows').appendChild(row);
     };
+    window.addAssistRow=(name='',assists=1)=>{
+      const row=document.createElement('div'); row.className='scorer-row';
+      const opts=PLAYERS.map(p=>'<option value="'+p.name+'"'+(p.name===name?' selected':'')+'>'+p.name+'</option>').join('');
+      row.innerHTML='<select>'+opts+'</select><input type="number" value="'+assists+'" min="1" max="20"><button class="btn-rem-scorer" onclick="this.parentElement.remove()">✕</button>';
+      document.getElementById('assist-rows').appendChild(row);
+    };
     function getScorers(){return[...document.querySelectorAll('#scorer-rows .scorer-row')].map(r=>({name:r.querySelector('select').value,goals:parseInt(r.querySelector('input').value)||1}));}
+    function getAssists(){return[...document.querySelectorAll('#assist-rows .scorer-row')].map(r=>({name:r.querySelector('select').value,assists:parseInt(r.querySelector('input').value)||1}));}
+    function updateTotalGA(){}
 
     window.saveMatch=async()=>{
       if(!currentUser)return;
       const opponent=document.getElementById('f-opponent').value.trim();
       if(!opponent){alert('Ange motståndare');return;}
       const gf=document.getElementById('f-goals-for').value;
-      const ga=document.getElementById('f-goals-against').value;
+      const p1v=document.getElementById('f-ga-p1').value;
+      const p2v=document.getElementById('f-ga-p2').value;
+      const p3v=document.getElementById('f-ga-p3').value;
+      const anyPeriod=p1v!==''||p2v!==''||p3v!=='';
+      const p1=p1v!==''?+p1v:null, p2=p2v!==''?+p2v:null, p3=p3v!==''?+p3v:null;
+      const existingGA=editingId?(matches.find(m=>m.id===editingId)?.goalsAgainst??null):null;
+      const gaTotal=anyPeriod?(p1||0)+(p2||0)+(p3||0):existingGA;
       const lagPick=document.getElementById('f-lag').value;
       const data={opponent,date:document.getElementById('f-date').value,venue:document.getElementById('f-venue').value,
-        type:document.getElementById('f-type').value,goalsFor:gf!==''?+gf:null,goalsAgainst:ga!==''?+ga:null,
-        notes:document.getElementById('f-notes').value.trim(),lag:lagPick||null,scorers:getScorers(),lineup:null};
+        type:document.getElementById('f-type').value,goalsFor:gf!==''?+gf:null,goalsAgainst:gaTotal,
+        periodsAgainst:anyPeriod?[p1,p2,p3]:null,
+        notes:document.getElementById('f-notes').value.trim(),lag:lagPick||null,scorers:getScorers(),assists:getAssists(),lineup:null};
       const btn=document.getElementById('btn-save-match');
       btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
       try{
@@ -968,8 +997,10 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     function clearForm(){
       document.getElementById('f-opponent').value='';document.getElementById('f-date').value='';
       document.getElementById('f-venue').value='home';document.getElementById('f-type').value='Serie';
-      document.getElementById('f-goals-for').value='';document.getElementById('f-goals-against').value='';
-      document.getElementById('f-notes').value='';document.getElementById('f-lag').value='';document.getElementById('scorer-rows').innerHTML='';
+      document.getElementById('f-goals-for').value='';
+      document.getElementById('f-ga-p1').value='';document.getElementById('f-ga-p2').value='';document.getElementById('f-ga-p3').value='';
+      document.getElementById('f-notes').value='';document.getElementById('f-lag').value='';
+      document.getElementById('scorer-rows').innerHTML='';document.getElementById('assist-rows').innerHTML='';
     }
     window.cancelEdit=()=>{editingId=null;document.getElementById('form-title').textContent='Ny match';document.getElementById('btn-cancel-edit').style.display='none';clearForm();};
     window.editMatch=id=>{
@@ -978,12 +1009,18 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       editingId=id;document.getElementById('form-title').textContent='Redigera match';document.getElementById('btn-cancel-edit').style.display='block';
       document.getElementById('f-opponent').value=m.opponent||'';document.getElementById('f-date').value=m.date||'';
       document.getElementById('f-venue').value=m.venue||'home';document.getElementById('f-type').value=m.type||'Serie';
-      document.getElementById('f-goals-for').value=m.goalsFor!=null?m.goalsFor:'';document.getElementById('f-goals-against').value=m.goalsAgainst!=null?m.goalsAgainst:'';
+      document.getElementById('f-goals-for').value=m.goalsFor!=null?m.goalsFor:'';
+      const pa=m.periodsAgainst;
+      document.getElementById('f-ga-p1').value=pa&&pa[0]!=null?pa[0]:'';
+      document.getElementById('f-ga-p2').value=pa&&pa[1]!=null?pa[1]:'';
+      document.getElementById('f-ga-p3').value=pa&&pa[2]!=null?pa[2]:'';
       document.getElementById('f-notes').value=m.notes||'';
       const lagVal=m.lag==='Gul'||m.lag==='Svart'?m.lag:resolveMatchLag(m);
       document.getElementById('f-lag').value=(lagVal==='Gul'||lagVal==='Svart')?lagVal:'';
       document.getElementById('scorer-rows').innerHTML='';
       (m.scorers||[]).forEach(s=>addScorerRow(s.name,s.goals));
+      document.getElementById('assist-rows').innerHTML='';
+      (m.assists||[]).forEach(a=>addAssistRow(a.name,a.assists));
       switchTab('matches');document.querySelector('.match-form-panel').scrollIntoView({behavior:'smooth'});
     };
     window.deleteMatch=async id=>{
@@ -1111,6 +1148,33 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
           +'<span class="sval">'+g+'</span>'
         +'</div>'
       ).join(''):'<div style="color:var(--text-muted);font-size:13px;">Inga mål registrerade</div>';
+
+      // Assists
+      const assistMap={};
+      ms.forEach(m=>(m.assists||[]).forEach(a=>{assistMap[a.name]=(assistMap[a.name]||0)+a.assists;}));
+      const sortedA=Object.entries(assistMap).sort((a,b)=>b[1]-a[1]);
+      const maxA=sortedA[0]?sortedA[0][1]:1;
+      document.getElementById('stats-assists').innerHTML=sortedA.length?sortedA.map(([name,a],i)=>
+        '<div class="stat-row">'
+          +'<span class="sname">'+(i+1)+'. '+name+'</span>'
+          +'<div class="sbar-wrap"><div class="sbar" style="width:'+Math.round((a/maxA)*100)+'%"></div></div>'
+          +'<span class="sval">'+a+'</span>'
+        +'</div>'
+      ).join(''):'<div style="color:var(--text-muted);font-size:13px;">Inga assist registrerade</div>';
+
+      // Clean halves
+      const withPeriods=played.filter(m=>Array.isArray(m.periodsAgainst)&&m.periodsAgainst.length===3);
+      const totalPossible=withPeriods.length*3;
+      const cleanCounts=[0,0,0];
+      withPeriods.forEach(m=>{m.periodsAgainst.forEach((g,i)=>{if(g===0)cleanCounts[i]++;});});
+      const totalClean=cleanCounts.reduce((s,c)=>s+c,0);
+      document.getElementById('stats-cleanhalves').innerHTML=withPeriods.length?
+        '<div class="stat-row" style="margin-bottom:8px;"><span class="sname" style="font-weight:600;">Totalt</span><span class="sval">'+totalClean+' / '+totalPossible+'</span></div>'+
+        ['P1','P2','P3'].map((p,i)=>'<div class="stat-row"><span class="sname">'+p+'</span>'
+          +'<div class="sbar-wrap"><div class="sbar" style="width:'+(withPeriods.length?Math.round((cleanCounts[i]/withPeriods.length)*100):0)+'%"></div></div>'
+          +'<span class="sval">'+cleanCounts[i]+' / '+withPeriods.length+'</span></div>'
+        ).join(''):
+        '<div style="color:var(--text-muted);font-size:13px;">Inga matcher med perioder registrerade</div>';
 
       // Form (last 10 played)
       const last10=[...played].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,10).reverse();
