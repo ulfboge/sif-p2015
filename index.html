@@ -210,10 +210,11 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 .form-pill.D{background:#4a4a1a;color:#d4d460;}
 .form-pill.L{background:#6a1e1e;color:#da5f5f;}
 .form-pill.N{background:#252525;color:#555;}
-.h2h-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #222;font-size:13px;}
+.h2h-row{display:grid;grid-template-columns:1fr 30px 30px 30px 52px;align-items:center;gap:4px;padding:8px 0;border-bottom:1px solid #222;font-size:13px;}
 .h2h-row:last-child{border-bottom:none;}
-.h2h-opp{font-weight:600;color:var(--text-light);}
-.h2h-rec{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-muted);}
+.h2h-opp{font-weight:600;color:var(--text-light);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.h2h-rec{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-muted);text-align:center;}
+.h2h-score{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;text-align:right;}
 /* SPINNER */
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--yellow);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;}
 @keyframes spin{to{transform:rotate(360deg);}}
@@ -1187,10 +1188,13 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         '<div style="color:var(--text-muted);font-size:13px;">Inga matcher med resultat</div>';
 
       // H2H
+      const COLOR_SUFFIXES=/\s+(Turkos|Gul|Svart|Vit|Vitt|Röd|Röda|Blå|Grön|Lila|Rosa|Orange|Brun|Vit|Gröna|Blåa)$/i;
+      const normalizeOpp=name=>(name||'').replace(COLOR_SUFFIXES,'').trim();
       const h2h={};
       played.forEach(m=>{
-        if(!h2h[m.opponent])h2h[m.opponent]={w:0,d:0,l:0,gf:0,ga:0};
-        const r=h2h[m.opponent];
+        const key=normalizeOpp(m.opponent);
+        if(!h2h[key])h2h[key]={w:0,d:0,l:0,gf:0,ga:0};
+        const r=h2h[key];
         if(m.goalsFor>m.goalsAgainst)r.w++;
         else if(m.goalsFor===m.goalsAgainst)r.d++;
         else r.l++;
@@ -1200,10 +1204,10 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       document.getElementById('stats-h2h').innerHTML=h2hSorted.length?h2hSorted.map(([opp,r])=>
         '<div class="h2h-row">'
           +'<span class="h2h-opp">'+opp+'</span>'
-          +'<span class="h2h-rec" style="color:#7fda5f;">'+r.w+'V</span>&nbsp;'
-          +'<span class="h2h-rec" style="color:#d4d460;">'+r.d+'O</span>&nbsp;'
-          +'<span class="h2h-rec" style="color:#da5f5f;">'+r.l+'F</span>&nbsp;'
-          +'<span class="h2h-rec">'+r.gf+'-'+r.ga+'</span>'
+          +'<span class="h2h-rec" style="color:#7fda5f;">'+r.w+'V</span>'
+          +'<span class="h2h-rec" style="color:#d4d460;">'+r.d+'O</span>'
+          +'<span class="h2h-rec" style="color:#da5f5f;">'+r.l+'F</span>'
+          +'<span class="h2h-score">'+r.gf+'–'+r.ga+'</span>'
         +'</div>'
       ).join(''):'<div style="color:var(--text-muted);font-size:13px;">Inga matcher med resultat</div>';
 
