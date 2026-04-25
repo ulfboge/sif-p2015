@@ -125,6 +125,10 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 .match-section-separator details>table td{padding:4px 8px;border-bottom:1px solid #1e1e1e;}
 .match-section-separator details summary::-webkit-details-marker{color:#555;}
 .match-section-separator details[open] summary{color:#888;}
+.next-match-row{background:rgba(255,220,0,0.06);border-left:3px solid var(--yellow);}
+.next-match-row td{padding-top:10px;padding-bottom:10px;}
+.next-match-label{font-size:9px;font-weight:800;letter-spacing:.08em;color:var(--yellow);background:rgba(255,220,0,0.15);padding:2px 5px;border-radius:3px;margin-right:4px;vertical-align:middle;}
+.month-header-row td{padding:14px 8px 4px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#555;border-bottom:1px solid #1e1e1e;}
 .venue-badge,.type-badge{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:4px;white-space:nowrap;}
 .venue-badge.home{background:rgba(245,216,0,.15);color:var(--yellow);border:1px solid rgba(245,216,0,.3);}
 .venue-badge.away{background:rgba(100,180,255,.1);color:#6ab4ff;border:1px solid rgba(100,180,255,.25);}
@@ -901,13 +905,13 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       document.getElementById('pub-match-count').textContent='('+filtered.length+')';
       if(!filtered.length){tbody.innerHTML='';noEl.style.display='block';return;}
       noEl.style.display='none';
-      function matchRowHtml(m){
+      function matchRowHtml(m,isNext){
         const hasRes=m.goalsFor!=null&&m.goalsAgainst!=null;
         const dateStr=m.date?new Date(m.date+'T12:00:00').toLocaleDateString('sv-SE',{day:'numeric',month:'short'}): '–';
         const scorerStr=(m.scorers||[]).map(s=>s.name+(s.goals>1?' ('+s.goals+')':'')).join(', ');
         const lag=resolveMatchLag(m);
-        return '<tr class="'+(m.lineup?'clickable':'')+'" '+(m.lineup?'onclick="showLineup(\''+m.id+'\')"':'')+' title="'+(m.lineup?'Klicka för att se laguppställning':'')+'">'+
-          '<td>'+dateStr+'</td>'+
+        return '<tr class="'+(m.lineup?'clickable':'')+(isNext?' next-match-row':'')+'" '+(m.lineup?'onclick="showLineup(\''+m.id+'\')"':'')+' title="'+(m.lineup?'Klicka för att se laguppställning':'')+'">'+
+          '<td>'+(isNext?'<span class="next-match-label">NÄSTA</span> ':'')+dateStr+'</td>'+
           '<td style="font-weight:600;">'+lagBadgeHtml(lag)+m.opponent+'</td>'+
           '<td><span class="venue-badge '+(m.venue==='home'?'home':'away')+'">'+(m.venue==='home'?'H':'B')+'</span></td>'+
           '<td><span class="type-badge">'+m.type+'</span></td>'+
@@ -920,13 +924,23 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       const upcoming=filtered.filter(m=>m.goalsFor==null||m.goalsAgainst==null);
       let html='';
       if(upcoming.length){
-        html+=upcoming.map(matchRowHtml).join('');
+        html+=matchRowHtml(upcoming[0],true);
+        let currentMonth='';
+        upcoming.slice(1).forEach(m=>{
+          const monthKey=m.date?m.date.slice(0,7):'';
+          if(monthKey&&monthKey!==currentMonth){
+            currentMonth=monthKey;
+            const monthLabel=m.date?new Date(m.date+'T12:00:00').toLocaleDateString('sv-SE',{month:'long',year:'numeric'}):'';
+            html+='<tr class="month-header-row"><td colspan="7">'+monthLabel.charAt(0).toUpperCase()+monthLabel.slice(1)+'</td></tr>';
+          }
+          html+=matchRowHtml(m,false);
+        });
       }
       if(played.length){
         html+='<tr class="match-section-separator"><td colspan="7">'
           +'<details><summary style="cursor:pointer;font-size:12px;color:#aaa;padding:4px 0;">Spelade matcher ('+played.length+')</summary>'
           +'<table style="width:100%;border-collapse:collapse;"><tbody>'
-          +played.slice().reverse().map(matchRowHtml).join('')
+          +played.slice().reverse().map(m=>matchRowHtml(m,false)).join('')
           +'</tbody></table>'
           +'</details>'
           +'</td></tr>';
