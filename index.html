@@ -121,6 +121,10 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 .matches-table tr.clickable{cursor:pointer;}
 .result-cell{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:18px;color:var(--yellow);}
 .result-cell.no-res{color:#444;font-size:13px;}
+.match-section-separator td{padding:4px 0 0 0;border:none;}
+.match-section-separator details>table td{padding:4px 8px;border-bottom:1px solid #1e1e1e;}
+.match-section-separator details summary::-webkit-details-marker{color:#555;}
+.match-section-separator details[open] summary{color:#888;}
 .venue-badge,.type-badge{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:4px;white-space:nowrap;}
 .venue-badge.home{background:rgba(245,216,0,.15);color:var(--yellow);border:1px solid rgba(245,216,0,.3);}
 .venue-badge.away{background:rgba(100,180,255,.1);color:#6ab4ff;border:1px solid rgba(100,180,255,.25);}
@@ -897,7 +901,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       document.getElementById('pub-match-count').textContent='('+filtered.length+')';
       if(!filtered.length){tbody.innerHTML='';noEl.style.display='block';return;}
       noEl.style.display='none';
-      tbody.innerHTML=filtered.map(m=>{
+      function matchRowHtml(m){
         const hasRes=m.goalsFor!=null&&m.goalsAgainst!=null;
         const dateStr=m.date?new Date(m.date+'T12:00:00').toLocaleDateString('sv-SE',{day:'numeric',month:'short'}): '–';
         const scorerStr=(m.scorers||[]).map(s=>s.name+(s.goals>1?' ('+s.goals+')':'')).join(', ');
@@ -911,7 +915,23 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
           '<td class="scorers-cell">'+(scorerStr||'–')+'</td>'+
           '<td>'+(m.lineup?'<span style="color:#6ab4ff;font-size:11px;">👁 Uppst.</span>':'')+'</td>'+
           '</tr>';
-      }).join('');
+      }
+      const played=filtered.filter(m=>m.goalsFor!=null&&m.goalsAgainst!=null);
+      const upcoming=filtered.filter(m=>m.goalsFor==null||m.goalsAgainst==null);
+      let html='';
+      if(upcoming.length){
+        html+=upcoming.map(matchRowHtml).join('');
+      }
+      if(played.length){
+        html+='<tr class="match-section-separator"><td colspan="7">'
+          +'<details><summary style="cursor:pointer;font-size:12px;color:#aaa;padding:4px 0;">Spelade matcher ('+played.length+')</summary>'
+          +'<table style="width:100%;border-collapse:collapse;"><tbody>'
+          +played.slice().reverse().map(matchRowHtml).join('')
+          +'</tbody></table>'
+          +'</details>'
+          +'</td></tr>';
+      }
+      tbody.innerHTML=html;
     }
 
     // ── ADMIN MATCH LIST ──────────────────────────────────────────────────────
