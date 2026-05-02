@@ -224,7 +224,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 .form-pill.N{background:#252525;color:#555;}
 .h2h-row{display:grid;grid-template-columns:1fr 30px 30px 30px 52px;align-items:center;gap:4px;padding:8px 0;border-bottom:1px solid #222;font-size:13px;}
 .h2h-row:last-child{border-bottom:none;}
-.h2h-opp{font-weight:600;color:var(--text-light);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.h2h-opp{font-weight:600;color:var(--text-light);}
 .h2h-rec{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-muted);text-align:center;}
 .h2h-score{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;text-align:right;}
 /* SPINNER */
@@ -1240,8 +1240,8 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         '<div style="color:var(--text-muted);font-size:13px;">Inga matcher med resultat</div>';
 
       // H2H
-      const COLOR_SUFFIXES=/\s+(\d+\s+)?(Turkos|Gul|Svart|Vit|Vitt|Röd|Röda|Blå|Grön|Lila|Rosa|Orange|Brun|Vit|Gröna|Blåa)$/i;
-      const normalizeOpp=name=>(name||'').replace(COLOR_SUFFIXES,'').trim();
+      const COLOR_SUFFIXES=/\s+(\d+\s+)?(Turkos|Gul|Svart|Vit|Vitt|Röd|Röda|Blå|Grön|Lila|Rosa|Orange|Brun|Vit|Gröna|Blåa)(\s+\d+)?$/i;
+      const normalizeOpp=name=>(name||'').replace(COLOR_SUFFIXES,'').replace(/\s+\d+$/,'').trim();
       const h2h={};
       played.forEach(m=>{
         const key=normalizeOpp(m.opponent);
