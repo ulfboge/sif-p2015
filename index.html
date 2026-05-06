@@ -398,9 +398,9 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
             <div class="form-group">
               <label>Mål emot (P1&nbsp;/&nbsp;P2&nbsp;/&nbsp;P3)</label>
               <div style="display:flex;gap:4px;">
-                <input type="number" id="f-ga-p1" min="0" placeholder="P1" style="width:48px;" oninput="updateTotalGA()">
-                <input type="number" id="f-ga-p2" min="0" placeholder="P2" style="width:48px;" oninput="updateTotalGA()">
-                <input type="number" id="f-ga-p3" min="0" placeholder="P3" style="width:48px;" oninput="updateTotalGA()">
+                <input type="number" id="f-ga-p1" min="0" placeholder="P1" style="width:48px;">
+                <input type="number" id="f-ga-p2" min="0" placeholder="P2" style="width:48px;">
+                <input type="number" id="f-ga-p3" min="0" placeholder="P3" style="width:48px;">
               </div>
             </div>
             <div class="form-group"><label>Anteckningar</label><input type="text" id="f-notes" placeholder="Fritext…"></div>
@@ -544,6 +544,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     const DEFAULT_MATCH_STAFF = ["Johan", "Romeo"];
     const numMap = {};
     PLAYERS.forEach(p => numMap[p.name] = p.num);
+    const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
     // ── PITCH STATE ───────────────────────────────────────────────────────────
     const ROW_CONFIG = {gk:{max:1},def:{max:2},dmid:{max:1},mid:{max:3},fwd:{max:1}};
@@ -917,9 +918,9 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         return '<tr class="'+(m.lineup?'clickable':'')+(isNext?' next-match-row':'')+(isLastPlayed?' last-played-row':'')+'" '+(m.lineup?'onclick="showLineup(\''+m.id+'\')"':'')+' title="'+(m.lineup?'Klicka för att se laguppställning':'')+'">'+
           '<td>'+(isLastPlayed?'<span class="last-played-label">SENAST</span> ':'')+
                  (isNext?'<span class="next-match-label">NÄSTA</span> ':'')+dateStr+'</td>'+
-          '<td style="font-weight:600;">'+lagBadgeHtml(lag)+m.opponent+'</td>'+
+          '<td style="font-weight:600;">'+lagBadgeHtml(lag)+esc(m.opponent)+'</td>'+
           '<td><span class="venue-badge '+(m.venue==='home'?'home':'away')+'">'+(m.venue==='home'?'H':'B')+'</span></td>'+
-          '<td><span class="type-badge">'+m.type+'</span></td>'+
+          '<td><span class="type-badge">'+esc(m.type)+'</span></td>'+
           '<td class="result-cell'+(hasRes?'':' no-res')+(isLastPlayed?' last-played-result':'')+'">'+(hasRes?m.goalsFor+'–'+m.goalsAgainst:'?–?')+'</td>'+
           '<td class="scorers-cell">'+(scorerStr||'–')+'</td>'+
           '<td>'+(m.lineup?'<span style="color:#6ab4ff;font-size:11px;">👁 Uppst.</span>':'')+'</td>'+
@@ -987,11 +988,11 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
           '<div class="match-card-header">'
             +'<span class="venue-badge '+(m.venue==='home'?'home':'away')+'">'+(m.venue==='home'?'HEMMA':'BORTA')+'</span>'
             +(lag?'<span class="lag-badge '+(lag==='Gul'?'lag-gul':'lag-svart')+'" style="margin-left:4px;">'+lag+'</span>':'')
-            +'<span class="type-badge" style="margin-left:4px;">'+m.type+'</span>'
+            +'<span class="type-badge" style="margin-left:4px;">'+esc(m.type)+'</span>'
             +'<div class="match-result-badge'+(hasRes?'':' no-res')+'">'+(hasRes?m.goalsFor+'–'+m.goalsAgainst:'?–?')+'</div>'
           +'</div>'
-          +'<div class="match-opponent">'+m.opponent+'</div>'
-          +'<div class="match-meta">'+dateStr+(m.notes?' · '+m.notes:'')+(m.lineup?' · <span style="color:#6ab4ff">Uppst. ✓</span>':'')+'</div>'
+          +'<div class="match-opponent">'+esc(m.opponent)+'</div>'
+          +'<div class="match-meta">'+dateStr+(m.notes?' · '+esc(m.notes):'')+(m.lineup?' · <span style="color:#6ab4ff">Uppst. ✓</span>':'')+'</div>'
           +(scorerStr?'<div class="match-scorers-line">⚽ '+scorerStr+'</div>':'')
           +'<div class="match-actions">'
             +(m.lineup?'<button class="btn-sm" onclick="showLineup(\''+m.id+'\')">👁 Visa uppst.</button>':'')
@@ -1018,7 +1019,6 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     };
     function getScorers(){return[...document.querySelectorAll('#scorer-rows .scorer-row')].map(r=>({name:r.querySelector('select').value,goals:parseInt(r.querySelector('input').value)||1}));}
     function getAssists(){return[...document.querySelectorAll('#assist-rows .scorer-row')].map(r=>({name:r.querySelector('select').value,assists:parseInt(r.querySelector('input').value)||1}));}
-    function updateTotalGA(){}
 
     window.saveMatch=async()=>{
       if(!currentUser)return;
@@ -1078,9 +1078,11 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     };
     window.deleteMatch=async id=>{
       if(!currentUser||!confirm('Ta bort matchen?'))return;
-      await deleteDoc(doc(db,'matches',id));
-      if(activeLinkId===id){activeLinkId=null;updateLinkButton();}
-      await loadMatches();
+      try{
+        await deleteDoc(doc(db,'matches',id));
+        if(activeLinkId===id){activeLinkId=null;updateLinkButton();}
+        await loadMatches();
+      }catch(e){alert('Fel vid borttagning: '+e.message);}
     };
     async function importMatchScheduleRows(rows){
       if(!currentUser||!db)throw new Error('Inte inloggad eller ingen databas');
@@ -1234,13 +1236,13 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       document.getElementById('stats-form').innerHTML=last10.length?
         '<div class="form-strip">'+last10.map(m=>{
           const r=m.goalsFor>m.goalsAgainst?'W':m.goalsFor===m.goalsAgainst?'D':'L';
-          const title=m.opponent+' '+m.goalsFor+'-'+m.goalsAgainst;
+          const title=esc(m.opponent)+' '+m.goalsFor+'-'+m.goalsAgainst;
           return '<div class="form-pill '+r+'" title="'+title+'">'+r+'</div>';
         }).join('')+'</div>':
         '<div style="color:var(--text-muted);font-size:13px;">Inga matcher med resultat</div>';
 
       // H2H
-      const COLOR_SUFFIXES=/\s+(\d+\s+)?(Turkos|Gul|Svart|Vit|Vitt|Röd|Röda|Blå|Grön|Lila|Rosa|Orange|Brun|Vit|Gröna|Blåa)(\s+\d+)?$/i;
+      const COLOR_SUFFIXES=/\s+(\d+\s+)?(Turkos|Gul|Svart|Vitt|Vit|Röd|Röda|Blå|Grön|Lila|Rosa|Orange|Brun|Gröna|Blåa)(\s+\d+)?$/i;
       const normalizeOpp=name=>(name||'').replace(COLOR_SUFFIXES,'').replace(/\s+\d+$/,'').trim();
       const h2h={};
       played.forEach(m=>{
