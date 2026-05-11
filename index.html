@@ -1084,6 +1084,16 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         await loadMatches();
       }catch(e){alert('Fel vid borttagning: '+e.message);}
     };
+    function buildImportMatchNotes(m){
+      const parts=[];
+      if(m.lag)parts.push(m.lag);
+      if(m.tid)parts.push(m.tid);
+      if(m.plan)parts.push(m.plan);
+      if(m.vecka!=null&&m.vecka!=='')parts.push('v.'+m.vecka);
+      if(m.samling)parts.push('Samling '+m.samling);
+      if(m.speltid)parts.push(m.speltid);
+      return parts.join(' · ');
+    }
     async function importMatchScheduleRows(rows){
       if(!currentUser||!db)throw new Error('Inte inloggad eller ingen databas');
       const col=collection(db,'matches');
@@ -1091,7 +1101,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       for(const m of rows){
         await addDoc(col,{
           opponent:m.opponent,date:m.date,venue:m.venue,type:m.type,
-          notes:m.lag+' · '+m.tid+' · '+m.plan,
+          notes:buildImportMatchNotes(m),
           lag:m.lag||null,
           goalsFor:null,goalsAgainst:null,scorers:[],lineup:null
         });
