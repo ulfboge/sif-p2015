@@ -1094,25 +1094,44 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       if(m.speltid)parts.push(m.speltid);
       return parts.join(' · ');
     }
+    function importRowDedupeKey(row){
+      const lag=(row.lag==='Gul'||row.lag==='Svart')?row.lag:'';
+      const opp=(row.opponent||'').trim().toLowerCase();
+      return (row.date||'')+'|'+opp+'|'+lag;
+    }
+    function existingMatchDedupeKey(doc){
+      const lag=doc.lag==='Gul'||doc.lag==='Svart'?doc.lag:resolveMatchLag(doc);
+      const opp=(doc.opponent||'').trim().toLowerCase();
+      return (doc.date||'')+'|'+opp+'|'+(lag||'');
+    }
     async function importMatchScheduleRows(rows){
       if(!currentUser||!db)throw new Error('Inte inloggad eller ingen databas');
+      await loadMatches();
+      const seen=new Set(matches.map(existingMatchDedupeKey));
       const col=collection(db,'matches');
-      let ok=0;
+      let added=0, skipped=0;
       for(const m of rows){
+        const key=importRowDedupeKey(m);
+        if(seen.has(key)){
+          skipped++;
+          console.log('↷ redan finns, hoppar över: '+m.date+' '+m.opponent+(m.lag?' ('+m.lag+')':''));
+          continue;
+        }
         await addDoc(col,{
           opponent:m.opponent,date:m.date,venue:m.venue,type:m.type,
           notes:buildImportMatchNotes(m),
           lag:m.lag||null,
           goalsFor:null,goalsAgainst:null,scorers:[],lineup:null
         });
-        ok++;
-        console.log('✓ ('+ok+'/'+rows.length+') '+m.date+' '+m.opponent);
+        seen.add(key);
+        added++;
+        console.log('✓ ('+added+' ny) '+m.date+' '+m.opponent);
       }
-      return ok;
+      return{added,skipped};
     }
     window.importMatchSchedule=async()=>{
       if(!currentUser||!db){alert('Logga in först.');return;}
-      if(!confirm('Importera alla matcher från import-matches.json? Varje körning lägger till nya rader (dubbletter om du kör om).'))return;
+      if(!confirm('Importera matcher från import-matches.json? Rader som redan finns (samma datum, motståndare och lag) hoppas över.'))return;
       const btn=document.getElementById('btn-import-schedule');
       if(btn)btn.disabled=true;
       try{
@@ -1120,9 +1139,11 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         if(!res.ok)throw new Error('Kunde inte läsa import-matches.json (HTTP '+res.status+')');
         const rows=await res.json();
         if(!Array.isArray(rows)||!rows.length)throw new Error('Ogiltig JSON');
-        const n=await importMatchScheduleRows(rows);
+        const {added,skipped}=await importMatchScheduleRows(rows);
         await loadMatches();
-        alert('Klart! '+n+' matcher importerade.');
+        let msg='Klart! '+added+' nya matcher importerade.';
+        if(skipped)msg+=' '+skipped+' fanns redan och hoppades över.';
+        alert(msg);
       }catch(e){
         alert('Import misslyckades: '+e.message);
         console.error(e);
