@@ -874,6 +874,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     }
 
     function resolveMatchLag(m){
+      if(m.type==='Träningsmatch')return '';
       if(m.lag==='Gul'||m.lag==='Svart')return m.lag;
       const n=(m.notes||'').trim();
       if(n.startsWith('Gul ·'))return 'Gul';
@@ -1086,7 +1087,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     };
     function buildImportMatchNotes(m){
       const parts=[];
-      if(m.lag)parts.push(m.lag);
+      if(m.lag&&m.type!=='Träningsmatch')parts.push(m.lag);
       if(m.tid)parts.push(m.tid);
       if(m.plan)parts.push(m.plan);
       if(m.vecka!=null&&m.vecka!=='')parts.push('v.'+m.vecka);
@@ -1095,12 +1096,12 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       return parts.join(' · ');
     }
     function importRowDedupeKey(row){
-      const lag=(row.lag==='Gul'||row.lag==='Svart')?row.lag:'';
+      const lag=row.type==='Träningsmatch'?'':((row.lag==='Gul'||row.lag==='Svart')?row.lag:'');
       const opp=(row.opponent||'').trim().toLowerCase();
       return (row.date||'')+'|'+opp+'|'+lag;
     }
     function existingMatchDedupeKey(doc){
-      const lag=doc.lag==='Gul'||doc.lag==='Svart'?doc.lag:resolveMatchLag(doc);
+      const lag=doc.type==='Träningsmatch'?'':(doc.lag==='Gul'||doc.lag==='Svart'?doc.lag:resolveMatchLag(doc));
       const opp=(doc.opponent||'').trim().toLowerCase();
       return (doc.date||'')+'|'+opp+'|'+(lag||'');
     }
@@ -1120,7 +1121,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         await addDoc(col,{
           opponent:m.opponent,date:m.date,venue:m.venue,type:m.type,
           notes:buildImportMatchNotes(m),
-          lag:m.lag||null,
+          lag:m.type==='Träningsmatch'?null:(m.lag||null),
           goalsFor:null,goalsAgainst:null,scorers:[],lineup:null
         });
         seen.add(key);

@@ -19,7 +19,7 @@
 
 function buildImportMatchNotes(m) {
   const parts = [];
-  if (m.lag) parts.push(m.lag);
+  if (m.lag && m.type !== 'Träningsmatch') parts.push(m.lag);
   if (m.tid) parts.push(m.tid);
   if (m.plan) parts.push(m.plan);
   if (m.vecka != null && m.vecka !== '') parts.push('v.' + m.vecka);
@@ -70,7 +70,7 @@ function buildImportMatchNotes(m) {
         venue: m.venue,
         type: m.type,
         notes: buildImportMatchNotes(m),
-        lag: m.lag || null,
+        lag: m.type === 'Träningsmatch' ? null : (m.lag || null),
         goalsFor: null,
         goalsAgainst: null,
         scorers: [],
