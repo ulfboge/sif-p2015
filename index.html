@@ -873,8 +873,19 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       renderMatchList(); renderPublicMatches(); renderStats();
     }
 
+    function isTrainingMatch(m){
+      return m.type==='Träningsmatch';
+    }
+    function normalizeOpponent(s){
+      return (s||'').trim().toLowerCase().normalize('NFC');
+    }
+    function matchPassesLagFilter(m, lagFilter){
+      if(lagFilter==='all')return true;
+      if(isTrainingMatch(m))return true;
+      return resolveMatchLag(m)===lagFilter;
+    }
     function resolveMatchLag(m){
-      if(m.type==='Träningsmatch')return '';
+      if(isTrainingMatch(m))return '';
       if(m.lag==='Gul'||m.lag==='Svart')return m.lag;
       const n=(m.notes||'').trim();
       if(n.startsWith('Gul ·'))return 'Gul';
@@ -905,7 +916,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     };
     function renderPublicMatches(){
       let filtered=pubFilter==='all'?matches.slice():matches.filter(m=>m.type===pubFilter);
-      if(pubLagFilter!=='all')filtered=filtered.filter(m=>resolveMatchLag(m)===pubLagFilter);
+      if(pubLagFilter!=='all')filtered=filtered.filter(m=>matchPassesLagFilter(m,pubLagFilter));
       const tbody=document.getElementById('pub-matches-tbody');
       const noEl=document.getElementById('pub-no-matches');
       document.getElementById('pub-match-count').textContent='('+filtered.length+')';
@@ -973,7 +984,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       const list=document.getElementById('admin-match-list');
       if(!list)return;
       let listMatches=matches.slice();
-      if(adminLagFilter!=='all')listMatches=listMatches.filter(m=>resolveMatchLag(m)===adminLagFilter);
+      if(adminLagFilter!=='all')listMatches=listMatches.filter(m=>matchPassesLagFilter(m,adminLagFilter));
       document.getElementById('adm-match-count').textContent='('+listMatches.length+')';
       if(!matches.length){list.innerHTML='<div class="no-matches">Inga matcher sparade ännu</div>';return;}
       if(!listMatches.length){list.innerHTML='<div class="no-matches">Inga matcher för valt lag</div>';return;}
@@ -1087,7 +1098,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     };
     function buildImportMatchNotes(m){
       const parts=[];
-      if(m.lag&&m.type!=='Träningsmatch')parts.push(m.lag);
+      if(m.lag&&!isTrainingMatch(m))parts.push(m.lag);
       if(m.tid)parts.push(m.tid);
       if(m.plan)parts.push(m.plan);
       if(m.vecka!=null&&m.vecka!=='')parts.push('v.'+m.vecka);
@@ -1096,54 +1107,89 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       return parts.join(' · ');
     }
     function importRowDedupeKey(row){
-      const lag=row.type==='Träningsmatch'?'':((row.lag==='Gul'||row.lag==='Svart')?row.lag:'');
-      const opp=(row.opponent||'').trim().toLowerCase();
+      const opp=normalizeOpponent(row.opponent);
+      const lag=isTrainingMatch(row)?'':((row.lag==='Gul'||row.lag==='Svart')?row.lag:'');
       return (row.date||'')+'|'+opp+'|'+lag;
     }
     function existingMatchDedupeKey(doc){
-      const lag=doc.type==='Träningsmatch'?'':(doc.lag==='Gul'||doc.lag==='Svart'?doc.lag:resolveMatchLag(doc));
-      const opp=(doc.opponent||'').trim().toLowerCase();
+      const opp=normalizeOpponent(doc.opponent);
+      const lag=isTrainingMatch(doc)?'':(doc.lag==='Gul'||doc.lag==='Svart'?doc.lag:resolveMatchLag(doc));
       return (doc.date||'')+'|'+opp+'|'+(lag||'');
+    }
+    function trainingMatchLookupKey(row){
+      return (row.date||'')+'|'+normalizeOpponent(row.opponent);
+    }
+    function findExistingImportMatch(m, byFullKey, byTrainingKey){
+      const key=importRowDedupeKey(m);
+      if(byFullKey.has(key))return byFullKey.get(key);
+      if(isTrainingMatch(m)&&byTrainingKey.has(trainingMatchLookupKey(m)))return byTrainingKey.get(trainingMatchLookupKey(m));
+      return null;
+    }
+    async function syncTrainingMatchFromImport(existing, row){
+      const patch={};
+      const notes=buildImportMatchNotes(row);
+      if(existing.lag!=null)patch.lag=null;
+      if(existing.type!=='Träningsmatch')patch.type='Träningsmatch';
+      if((existing.notes||'')!==notes)patch.notes=notes;
+      if(existing.venue!==row.venue)patch.venue=row.venue;
+      if(Object.keys(patch).length===0)return false;
+      await updateDoc(doc(db,'matches',existing.id),patch);
+      Object.assign(existing,patch);
+      return true;
     }
     async function importMatchScheduleRows(rows){
       if(!currentUser||!db)throw new Error('Inte inloggad eller ingen databas');
       await loadMatches();
-      const seen=new Set(matches.map(existingMatchDedupeKey));
+      const byFullKey=new Map(matches.map(m=>[existingMatchDedupeKey(m),m]));
+      const byTrainingKey=new Map(matches.filter(isTrainingMatch).map(m=>[trainingMatchLookupKey(m),m]));
       const col=collection(db,'matches');
-      let added=0, skipped=0;
+      let added=0, skipped=0, updated=0;
+      const addedNames=[], skippedNames=[];
       for(const m of rows){
-        const key=importRowDedupeKey(m);
-        if(seen.has(key)){
+        const existing=findExistingImportMatch(m, byFullKey, byTrainingKey);
+        if(existing){
           skipped++;
-          console.log('↷ redan finns, hoppar över: '+m.date+' '+m.opponent+(m.lag?' ('+m.lag+')':''));
+          skippedNames.push(m.date+' '+m.opponent);
+          if(isTrainingMatch(m)&&await syncTrainingMatchFromImport(existing,m))updated++;
           continue;
         }
-        await addDoc(col,{
+        const data={
           opponent:m.opponent,date:m.date,venue:m.venue,type:m.type,
           notes:buildImportMatchNotes(m),
-          lag:m.type==='Träningsmatch'?null:(m.lag||null),
+          lag:isTrainingMatch(m)?null:(m.lag||null),
           goalsFor:null,goalsAgainst:null,scorers:[],lineup:null
-        });
-        seen.add(key);
+        };
+        const ref=await addDoc(col,data);
+        const saved={id:ref.id,...data};
+        byFullKey.set(importRowDedupeKey(m),saved);
+        if(isTrainingMatch(m))byTrainingKey.set(trainingMatchLookupKey(m),saved);
         added++;
+        addedNames.push(m.date+' '+m.opponent);
         console.log('✓ ('+added+' ny) '+m.date+' '+m.opponent);
       }
-      return{added,skipped};
+      return{added,skipped,updated,addedNames,skippedNames,total:rows.length};
     }
     window.importMatchSchedule=async()=>{
       if(!currentUser||!db){alert('Logga in först.');return;}
-      if(!confirm('Importera matcher från import-matches.json? Rader som redan finns (samma datum, motståndare och lag) hoppas över.'))return;
+      if(!confirm('Importera matcher från import-matches.json? Rader som redan finns (samma datum och motståndare) hoppas över.'))return;
       const btn=document.getElementById('btn-import-schedule');
       if(btn)btn.disabled=true;
       try{
-        const res=await fetch('import-matches.json');
+        const res=await fetch('import-matches.json?ts='+Date.now(),{cache:'no-store'});
         if(!res.ok)throw new Error('Kunde inte läsa import-matches.json (HTTP '+res.status+')');
         const rows=await res.json();
         if(!Array.isArray(rows)||!rows.length)throw new Error('Ogiltig JSON');
-        const {added,skipped}=await importMatchScheduleRows(rows);
+        const {added,skipped,updated,addedNames,total}=await importMatchScheduleRows(rows);
         await loadMatches();
-        let msg='Klart! '+added+' nya matcher importerade.';
-        if(skipped)msg+=' '+skipped+' fanns redan och hoppades över.';
+        let msg='Klart! '+added+' nya av '+total+' matcher importerade.';
+        if(updated)msg+=' '+updated+' träningsmatcher uppdaterades.';
+        if(skipped)msg+=' '+skipped+' fanns redan.';
+        if(!added&&!updated){
+          msg+='\n\nTips: kontrollera att filtren visar "Alla lag". Träningsmatcher syns oavsett Gul/Svart-filter.';
+          if(addedNames.length===0&&rows.some(r=>r.date==='2026-05-30'))msg+='\n\nMatchen 30/5 kan redan finnas — sök efter Mälarhöjden i listan.';
+        }else if(addedNames.length){
+          msg+='\n\nNya: '+addedNames.join(', ');
+        }
         alert(msg);
       }catch(e){
         alert('Import misslyckades: '+e.message);
@@ -1204,7 +1250,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 
     function renderStats(){
       let ms=statsFilter==='all'?matches.slice():matches.filter(m=>m.type===statsFilter);
-      if(statsLagFilter!=='all')ms=ms.filter(m=>resolveMatchLag(m)===statsLagFilter);
+      if(statsLagFilter!=='all')ms=ms.filter(m=>matchPassesLagFilter(m,statsLagFilter));
       const played=ms.filter(m=>m.goalsFor!=null&&m.goalsAgainst!=null);
       const wins=played.filter(m=>m.goalsFor>m.goalsAgainst).length;
       const draws=played.filter(m=>m.goalsFor===m.goalsAgainst).length;
