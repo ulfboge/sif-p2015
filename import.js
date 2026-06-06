@@ -42,6 +42,7 @@ function buildImportMatchNotes(m) {
     { date: '2026-05-23', opponent: 'Täby FK 73', venue: 'home', type: 'S:t Erikscupen', lag: 'Gul', plan: 'Stockhagens IP 2', tid: '12:30' },
     { date: '2026-05-24', opponent: 'Täby FK', venue: 'home', type: 'Träningsmatch', plan: 'Stockhagens IP', tid: '12:30', vecka: 21, samling: '12:00', speltid: '3×20 min' },
     { date: '2026-05-30', opponent: 'Mälarhöjden Hägersten FF - Syd', venue: 'away', type: 'Träningsmatch', plan: 'Hägerstensåsens BP', tid: '16:30', vecka: 22, samling: '16:00', speltid: '3×20 min' },
+    { date: '2026-06-14', opponent: 'Sickla IF', venue: 'home', type: 'Träningsmatch', plan: 'Stockhagens IP', tid: '11:30', vecka: 24, samling: '11:00', speltid: '3×20 min' },
     { date: '2026-05-31', opponent: 'Norrtulls SK Vit 1', venue: 'away', type: 'S:t Erikscupen', lag: 'Gul', plan: 'Bellevue BP 1', tid: '11:45' },
     { date: '2026-06-06', opponent: 'Täby FK 21', venue: 'home', type: 'S:t Erikscupen', lag: 'Gul', plan: 'Stockhagens IP 2', tid: '11:00' },
     { date: '2026-08-21', opponent: 'Karlbergs BK Gul', venue: 'away', type: 'S:t Erikscupen', lag: 'Gul', plan: 'Kristinebergs IP 2', tid: '18:45' },
