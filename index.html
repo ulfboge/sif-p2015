@@ -350,7 +350,6 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         <div class="filter-bar-wrap">
           <div class="filter-bar" id="pub-filter-bar">
             <button class="filter-btn active" data-filter="all" onclick="setPublicFilter('all')">Alla</button>
-            <button class="filter-btn" data-filter="Serie" onclick="setPublicFilter('Serie')">Serie</button>
             <button class="filter-btn" data-filter="Träningsmatch" onclick="setPublicFilter('Träningsmatch')">Träningsmatch</button>
             <button class="filter-btn" data-filter="S:t Erikscupen" onclick="setPublicFilter('S:t Erikscupen')">S:t Erikscupen</button>
             <button class="filter-btn" data-filter="Cup" onclick="setPublicFilter('Cup')">Cup</button>
@@ -390,7 +389,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
           </div>
           <div class="form-row">
             <div class="form-group"><label>Hemma / Borta</label><select id="f-venue"><option value="home">Hemma</option><option value="away">Borta</option></select></div>
-            <div class="form-group"><label>Spelform</label><select id="f-type"><option value="Serie">Serie</option><option value="Träningsmatch">Träningsmatch</option><option value="S:t Erikscupen">S:t Erikscupen</option><option value="Cup">Cup</option><option value="Annan">Annan</option></select></div>
+            <div class="form-group"><label>Spelform</label><select id="f-type"><option value="Träningsmatch">Träningsmatch</option><option value="S:t Erikscupen">S:t Erikscupen</option><option value="Cup">Cup</option><option value="Annan">Annan</option></select></div>
             <div class="form-group" style="max-width:140px;"><label>Vårt lag</label><select id="f-lag"><option value="">–</option><option value="Gul">Gul</option><option value="Svart">Svart</option></select></div>
           </div>
           <div class="form-row">
@@ -439,7 +438,6 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         <div class="filter-bar-wrap">
           <div class="stats-filter-bar" id="stats-filter-bar">
             <button class="filter-btn active" data-filter="all" onclick="setStatsFilter('all')">Alla matcher</button>
-            <button class="filter-btn" data-filter="Serie" onclick="setStatsFilter('Serie')">Serie</button>
             <button class="filter-btn" data-filter="Träningsmatch" onclick="setStatsFilter('Träningsmatch')">Träningsmatch</button>
             <button class="filter-btn" data-filter="S:t Erikscupen" onclick="setStatsFilter('S:t Erikscupen')">S:t Erikscupen</button>
             <button class="filter-btn" data-filter="Cup" onclick="setStatsFilter('Cup')">Cup</button>
@@ -860,6 +858,18 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         m.lineup = lineup;
       }));
     }
+    async function backfillSerieMatches(){
+      if(!currentUser||!db||!matches.length)return;
+      const toUpdate=matches.filter(m=>m.type==='Serie');
+      if(!toUpdate.length)return;
+      await Promise.all(toUpdate.map(async m=>{
+        const patch={type:'Träningsmatch'};
+        if(m.lag!=null)patch.lag=null;
+        await updateDoc(doc(db,'matches',m.id),patch);
+        m.type='Träningsmatch';
+        if(m.lag!=null)m.lag=null;
+      }));
+    }
     async function loadMatches(){
       try{
         const q=query(collection(db,'matches'),orderBy('date','asc'));
@@ -870,11 +880,15 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         catch(e2){matches=[];}
       }
       try{ await backfillLegacyMatchStaff(); }catch(e3){ console.warn('Staff backfill skipped:', e3); }
+      try{ await backfillSerieMatches(); }catch(e4){ console.warn('Serie backfill skipped:', e4); }
       renderMatchList(); renderPublicMatches(); renderStats();
     }
 
+    function effectiveMatchType(m){
+      return m.type==='Serie'?'Träningsmatch':(m.type||'Träningsmatch');
+    }
     function isTrainingMatch(m){
-      return m.type==='Träningsmatch';
+      return effectiveMatchType(m)==='Träningsmatch';
     }
     function normalizeOpponent(s){
       return (s||'').trim().toLowerCase().normalize('NFC');
@@ -915,7 +929,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       renderMatchList();
     };
     function renderPublicMatches(){
-      let filtered=pubFilter==='all'?matches.slice():matches.filter(m=>m.type===pubFilter);
+      let filtered=pubFilter==='all'?matches.slice():matches.filter(m=>effectiveMatchType(m)===pubFilter);
       if(pubLagFilter!=='all')filtered=filtered.filter(m=>matchPassesLagFilter(m,pubLagFilter));
       const tbody=document.getElementById('pub-matches-tbody');
       const noEl=document.getElementById('pub-no-matches');
@@ -932,7 +946,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
                  (isNext?'<span class="next-match-label">NÄSTA</span> ':'')+dateStr+'</td>'+
           '<td style="font-weight:600;">'+lagBadgeHtml(lag)+esc(m.opponent)+'</td>'+
           '<td><span class="venue-badge '+(m.venue==='home'?'home':'away')+'">'+(m.venue==='home'?'H':'B')+'</span></td>'+
-          '<td><span class="type-badge">'+esc(m.type)+'</span></td>'+
+          '<td><span class="type-badge">'+esc(effectiveMatchType(m))+'</span></td>'+
           '<td class="result-cell'+(hasRes?'':' no-res')+(isLastPlayed?' last-played-result':'')+'">'+(hasRes?m.goalsFor+'–'+m.goalsAgainst:'?–?')+'</td>'+
           '<td class="scorers-cell">'+(scorerStr||'–')+'</td>'+
           '<td>'+(m.lineup?'<span style="color:#6ab4ff;font-size:11px;">👁 Uppst.</span>':'')+'</td>'+
@@ -1000,7 +1014,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
           '<div class="match-card-header">'
             +'<span class="venue-badge '+(m.venue==='home'?'home':'away')+'">'+(m.venue==='home'?'HEMMA':'BORTA')+'</span>'
             +(lag?'<span class="lag-badge '+(lag==='Gul'?'lag-gul':'lag-svart')+'" style="margin-left:4px;">'+lag+'</span>':'')
-            +'<span class="type-badge" style="margin-left:4px;">'+esc(m.type)+'</span>'
+            +'<span class="type-badge" style="margin-left:4px;">'+esc(effectiveMatchType(m))+'</span>'
             +'<div class="match-result-badge'+(hasRes?'':' no-res')+'">'+(hasRes?m.goalsFor+'–'+m.goalsAgainst:'?–?')+'</div>'
           +'</div>'
           +'<div class="match-opponent">'+esc(m.opponent)+'</div>'
@@ -1061,7 +1075,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 
     function clearForm(){
       document.getElementById('f-opponent').value='';document.getElementById('f-date').value='';
-      document.getElementById('f-venue').value='home';document.getElementById('f-type').value='Serie';
+      document.getElementById('f-venue').value='home';document.getElementById('f-type').value='Träningsmatch';
       document.getElementById('f-goals-for').value='';
       document.getElementById('f-ga-p1').value='';document.getElementById('f-ga-p2').value='';document.getElementById('f-ga-p3').value='';
       document.getElementById('f-notes').value='';document.getElementById('f-lag').value='';
@@ -1073,7 +1087,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       const m=matches.find(x=>x.id===id);if(!m)return;
       editingId=id;document.getElementById('form-title').textContent='Redigera match';document.getElementById('btn-cancel-edit').style.display='block';
       document.getElementById('f-opponent').value=m.opponent||'';document.getElementById('f-date').value=m.date||'';
-      document.getElementById('f-venue').value=m.venue||'home';document.getElementById('f-type').value=m.type||'Serie';
+      document.getElementById('f-venue').value=m.venue||'home';document.getElementById('f-type').value=effectiveMatchType(m);
       document.getElementById('f-goals-for').value=m.goalsFor!=null?m.goalsFor:'';
       const pa=m.periodsAgainst;
       document.getElementById('f-ga-p1').value=pa&&pa[0]!=null?pa[0]:'';
@@ -1208,7 +1222,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       const dateStr=m.date?new Date(m.date+'T12:00:00').toLocaleDateString('sv-SE',{day:'numeric',month:'short',year:'numeric'}):'';
       document.getElementById('modal-title').textContent=m.opponent;
       const lagStr=resolveMatchLag(m);
-      document.getElementById('modal-meta').textContent=(m.venue==='home'?'Hemma':'Borta')+' · '+m.type+(lagStr?' · '+lagStr:'')+(dateStr?' · '+dateStr:'')+(hasRes?' · '+m.goalsFor+'–'+m.goalsAgainst:'');
+      document.getElementById('modal-meta').textContent=(m.venue==='home'?'Hemma':'Borta')+' · '+effectiveMatchType(m)+(lagStr?' · '+lagStr:'')+(dateStr?' · '+dateStr:'')+(hasRes?' · '+m.goalsFor+'–'+m.goalsAgainst:'');
       const rows={gk:'modal-gk',def:'modal-def',dmid:'modal-dmid',mid:'modal-mid',fwd:'modal-fwd'};
       Object.entries(rows).forEach(([row,elId])=>{
         const el=document.getElementById(elId);el.innerHTML='';
@@ -1249,7 +1263,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     };
 
     function renderStats(){
-      let ms=statsFilter==='all'?matches.slice():matches.filter(m=>m.type===statsFilter);
+      let ms=statsFilter==='all'?matches.slice():matches.filter(m=>effectiveMatchType(m)===statsFilter);
       if(statsLagFilter!=='all')ms=ms.filter(m=>matchPassesLagFilter(m,statsLagFilter));
       const played=ms.filter(m=>m.goalsFor!=null&&m.goalsAgainst!=null);
       const wins=played.filter(m=>m.goalsFor>m.goalsAgainst).length;
