@@ -534,7 +534,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       {name:"Harry",num:6},{name:"Hartley",num:26},{name:"Henry",num:2},
       {name:"Hugo",num:3},{name:"Ian",num:30},{name:"Kenzie",num:4},
       {name:"Lucas",num:21},{name:"Nils",num:5},
-      {name:"Sam",num:20},{name:"Tom",num:15},{name:"Vilhelm",num:8},{name:"Vincent",num:7}
+      {name:"Sam",num:20},{name:"Tom",num:15},{name:"Vincent",num:7}
     ];
     const STAFF = [
       {name:"Romeo", role:"Tränare"},
@@ -1407,4 +1407,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     initListDropTargets();
     render();
     if (db) loadMatches();
-    document.getElementById('f-date').value
+    document.getElementById('f-date').valueAsDate=new Date();
+  </script>
+</body>
+</html>
