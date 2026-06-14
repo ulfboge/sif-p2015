@@ -543,7 +543,15 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     const DEFAULT_MATCH_STAFF = ["Johan", "Romeo"];
     const numMap = {};
     PLAYERS.forEach(p => numMap[p.name] = p.num);
+    const OWN_GOAL_SCORER = 'Självmål';
     const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    function scorerSelectOptions(selected=''){
+      const playerOpts=PLAYERS.map(p=>'<option value="'+p.name+'"'+(p.name===selected?' selected':'')+'>'+p.name+'</option>').join('');
+      const ownGoalOpt='<option value="'+OWN_GOAL_SCORER+'"'+(selected===OWN_GOAL_SCORER?' selected':'')+'>'+OWN_GOAL_SCORER+' (motståndare)</option>';
+      return playerOpts+ownGoalOpt;
+    }
+    function formatScorerSummary(s){return s.name+(s.goals>1?' ('+s.goals+')':'');}
+    function formatScorerDetail(s){return (s.name===OWN_GOAL_SCORER?'🥅 ':'⚽ ')+s.name+(s.goals>1?' × '+s.goals:'');}
 
     // ── PITCH STATE ───────────────────────────────────────────────────────────
     const ROW_CONFIG = {gk:{max:1},def:{max:2},dmid:{max:1},mid:{max:3},fwd:{max:1}};
@@ -940,7 +948,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       function matchRowHtml(m,isNext,isLastPlayed){
         const hasRes=m.goalsFor!=null&&m.goalsAgainst!=null;
         const dateStr=m.date?new Date(m.date+'T12:00:00').toLocaleDateString('sv-SE',{day:'numeric',month:'short'}): '–';
-        const scorerStr=(m.scorers||[]).map(s=>s.name+(s.goals>1?' ('+s.goals+')':'')).join(', ');
+        const scorerStr=(m.scorers||[]).map(formatScorerSummary).join(', ');
         const lag=resolveMatchLag(m);
         return '<tr class="'+(m.lineup?'clickable':'')+(isNext?' next-match-row':'')+(isLastPlayed?' last-played-row':'')+'" '+(m.lineup?'onclick="showLineup(\''+m.id+'\')"':'')+' title="'+(m.lineup?'Klicka för att se laguppställning':'')+'">'+
           '<td>'+(isLastPlayed?'<span class="last-played-label">SENAST</span> ':'')+
@@ -1007,7 +1015,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       listMatches.forEach(m=>{
         const hasRes=m.goalsFor!=null&&m.goalsAgainst!=null;
         const dateStr=m.date?new Date(m.date+'T12:00:00').toLocaleDateString('sv-SE',{day:'numeric',month:'short',year:'numeric'}):'';
-        const scorerStr=(m.scorers||[]).map(s=>s.name+(s.goals>1?' ('+s.goals+')':'')).join(', ');
+        const scorerStr=(m.scorers||[]).map(formatScorerSummary).join(', ');
         const lag=resolveMatchLag(m);
         const card=document.createElement('div');
         card.className='match-card'+(activeLinkId===m.id?' selected':'');
@@ -1034,8 +1042,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     // ── MATCH FORM ────────────────────────────────────────────────────────────
     window.addScorerRow=(name='',goals=1)=>{
       const row=document.createElement('div'); row.className='scorer-row';
-      const opts=PLAYERS.map(p=>'<option value="'+p.name+'"'+(p.name===name?' selected':'')+'>'+p.name+'</option>').join('');
-      row.innerHTML='<select>'+opts+'</select><input type="number" value="'+goals+'" min="1" max="20"><button class="btn-rem-scorer" onclick="this.parentElement.remove()">✕</button>';
+      row.innerHTML='<select>'+scorerSelectOptions(name)+'</select><input type="number" value="'+goals+'" min="1" max="20"><button class="btn-rem-scorer" onclick="this.parentElement.remove()">✕</button>';
       document.getElementById('scorer-rows').appendChild(row);
     };
     window.addAssistRow=(name='',assists=1)=>{
@@ -1243,7 +1250,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       if(staffBench.length){sw.style.display='block';sl.innerHTML=staffBench.map(n=>'<div class="staff-chip-item">'+n+'</div>').join('');}
       else sw.style.display='none';
       const si=document.getElementById('modal-scorers-info'),sc=document.getElementById('modal-scorers-list');
-      if(m.scorers&&m.scorers.length){si.style.display='block';sc.innerHTML=m.scorers.map(s=>'⚽ '+s.name+(s.goals>1?' × '+s.goals:'')).join('<br>');}
+      if(m.scorers&&m.scorers.length){si.style.display='block';sc.innerHTML=m.scorers.map(formatScorerDetail).join('<br>');}
       else si.style.display='none';
       document.getElementById('match-lineup-view').style.display='block';
       document.body.style.overflow='hidden';
@@ -1286,7 +1293,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 
       // Scorers
       const scorerMap={};
-      ms.forEach(m=>(m.scorers||[]).forEach(s=>{scorerMap[s.name]=(scorerMap[s.name]||0)+s.goals;}));
+      ms.forEach(m=>(m.scorers||[]).forEach(s=>{if(s.name===OWN_GOAL_SCORER)return;scorerMap[s.name]=(scorerMap[s.name]||0)+s.goals;}));
       const sorted=Object.entries(scorerMap).sort((a,b)=>b[1]-a[1]);
       const maxG=sorted[0]?sorted[0][1]:1;
       document.getElementById('stats-scorers').innerHTML=sorted.length?sorted.map(([name,g],i)=>
