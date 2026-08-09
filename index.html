@@ -1274,17 +1274,28 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       if(isTrainingMatch(m)&&byTrainingKey.has(trainingMatchLookupKey(m)))return byTrainingKey.get(trainingMatchLookupKey(m));
       return null;
     }
-    async function syncTrainingMatchFromImport(existing, row){
+    // Uppdaterar en redan inlagd match från spelprogrammet (tid, plan, speltid, lag).
+    // Körs bara på matcher utan resultat – spelade matcher rörs aldrig.
+    async function syncMatchFromImport(existing, row){
       const patch={};
       const notes=buildImportMatchNotes(row);
-      if(existing.lag!=null)patch.lag=null;
-      if(existing.type!=='Träningsmatch')patch.type='Träningsmatch';
+      if(isTrainingMatch(row)){
+        if(existing.lag!=null)patch.lag=null;
+        if(existing.type!=='Träningsmatch')patch.type='Träningsmatch';
+      }else{
+        const lag=(row.lag==='Gul'||row.lag==='Svart')?row.lag:null;
+        if((existing.lag==null?null:existing.lag)!==lag)patch.lag=lag;
+        if(existing.type!==row.type)patch.type=row.type;
+      }
       if((existing.notes||'')!==notes)patch.notes=notes;
       if(existing.venue!==row.venue)patch.venue=row.venue;
       if(Object.keys(patch).length===0)return false;
       await updateDoc(doc(db,'matches',existing.id),patch);
       Object.assign(existing,patch);
       return true;
+    }
+    function importMatchIsPlayed(m){
+      return m.goalsFor!=null || m.goalsAgainst!=null;
     }
     async function importMatchScheduleRows(rows){
       if(!currentUser||!db)throw new Error('Inte inloggad eller ingen databas');
@@ -1299,7 +1310,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         if(existing){
           skipped++;
           skippedNames.push(m.date+' '+m.opponent);
-          if(isTrainingMatch(m)&&await syncTrainingMatchFromImport(existing,m))updated++;
+          if(!importMatchIsPlayed(existing)&&await syncMatchFromImport(existing,m))updated++;
           continue;
         }
         const data={
@@ -1331,8 +1342,8 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         const {added,skipped,updated,addedNames,total}=await importMatchScheduleRows(rows);
         await loadMatches();
         let msg='Klart! '+added+' nya av '+total+' matcher importerade.';
-        if(updated)msg+=' '+updated+' träningsmatcher uppdaterades.';
-        if(skipped)msg+=' '+skipped+' fanns redan.';
+        if(updated)msg+=' '+updated+' befintliga matcher uppdaterades från spelprogrammet.';
+        if(skipped)msg+=' '+(skipped-updated)+' var redan aktuella.';
         if(!added&&!updated){
           msg+='\n\nTips: kontrollera att filtren visar "Alla lag". Träningsmatcher syns oavsett Gul/Svart-filter.';
           if(addedNames.length===0&&rows.some(r=>r.date==='2026-05-30'))msg+='\n\nMatchen 30/5 kan redan finnas — sök efter Mälarhöjden i listan.';
