@@ -300,6 +300,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 /* Publik live-banner */
 #public-live-banner{margin-bottom:18px;}
 .pub-live-card{background:linear-gradient(180deg,#1f1a1a,#151515);border:1px solid rgba(229,57,53,.35);border-radius:12px;padding:14px;max-width:560px;}
+.pub-live-card + .pub-live-card{margin-top:12px;}
 .pub-live-events{margin-top:12px;padding-top:10px;border-top:1px solid #2b2b2b;display:flex;flex-direction:column;gap:5px;font-size:13px;}
 .pub-live-ev{display:flex;gap:9px;}
 .pub-live-ev .t{font-family:'Barlow Condensed',sans-serif;font-weight:900;color:var(--yellow);min-width:52px;}
@@ -1033,7 +1034,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       }
       try{ await backfillLegacyMatchStaff(); }catch(e3){ console.warn('Staff backfill skipped:', e3); }
       try{ await backfillSerieMatches(); }catch(e4){ console.warn('Serie backfill skipped:', e4); }
-      renderMatchList(); renderPublicMatches(); renderStats();
+      renderMatchList(); renderPublicMatches(); renderStats(); renderLiveBanner();
     }
 
     function effectiveMatchType(m){
@@ -1166,9 +1167,12 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
           '<td>'+(m.lineup?'<span style="color:#6ab4ff;font-size:11px;">👁 Uppst.</span>':'')+'</td>'+
           '</tr>';
       }
-      const played=filtered.filter(m=>m.goalsFor!=null&&m.goalsAgainst!=null);
-      const upcoming=filtered.filter(m=>m.goalsFor==null||m.goalsAgainst==null);
-      let html='';
+      const liveNow=filtered.filter(m=>isLiveActive(liveOf(m)));
+      const liveIds=new Set(liveNow.map(m=>m.id));
+      const rest=filtered.filter(m=>!liveIds.has(m.id));
+      const played=rest.filter(m=>m.goalsFor!=null&&m.goalsAgainst!=null);
+      const upcoming=rest.filter(m=>m.goalsFor==null||m.goalsAgainst==null);
+      let html=liveNow.map(m=>matchRowHtml(m,false,false)).join('');
       if(played.length){
         html+=matchRowHtml(played[played.length-1],false,true);
       }
@@ -1710,6 +1714,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     function isLiveActive(l){ return !!l && (l.status === 'running' || l.status === 'paused'); }
     function liveMatchById(id){ return matches.find(m => m.id === id) || null; }
     function findActiveLiveMatch(){ return matches.find(m => isLiveActive(liveOf(m))) || null; }
+    function findActiveLiveMatches(){ return matches.filter(m => isLiveActive(liveOf(m))); }
 
     function isSteMatch(m){ return !!m && m.type === 'S:t Erikscupen'; }
     // Plockar speltiden ur matchens anteckningar, t.ex. "2×13 min" eller "3x20 min"
@@ -2120,31 +2125,28 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     }
 
     // ── Publik live-banner (syns för alla) ────────────────────────────────────
-    function renderLiveBanner(){
-      const el = document.getElementById('public-live-banner');
-      if(!el) return;
-      const m = findActiveLiveMatch();
-      if(!m){ el.innerHTML = ''; return; }
+    // Visar samtliga pågående matcher – Gul och Svart kan spela samtidigt.
+    function liveCardHtml(m){
       const l   = liveOf(m);
       const sc  = liveScore(l);
       const usFirst = m.venue === 'home';
       const running = l.status === 'running';
-      const elapsed = liveElapsedMs(l);
-      const teamUs  = '<div class="live-team us">Stocksunds IF</div>';
+      const lag = resolveMatchLag(m);
+      const tur = resolveTurnering(m);
+      const teamUs  = '<div class="live-team us">Stocksunds IF' + (lag ? ' ' + lag : '') + '</div>';
       const teamOpp = '<div class="live-team">' + esc(m.opponent) + '</div>';
-      el.innerHTML =
-        '<div class="pub-live-card">'
+      return '<div class="pub-live-card">'
         + '<div class="live-board-top">'
         +   (running ? '<span class="live-badge"><span class="live-dot"></span>Live nu</span>'
                      : '<span class="live-badge paused">Paus</span>')
         +   '<span style="font-size:11px;color:var(--text-muted);">'
-        +     (m.venue==='home'?'Hemma':'Borta') + ' · ' + esc(effectiveMatchType(m))
-        +     (resolveMatchLag(m) ? ' · ' + resolveMatchLag(m) : '') + '</span>'
+        +     [(m.venue==='home'?'Hemma':'Borta'), esc(effectiveMatchType(m)), esc(tur), lag].filter(Boolean).join(' · ')
+        +   '</span>'
         + '</div>'
         + '<div class="live-teams">' + (usFirst ? teamUs : teamOpp)
         +   '<div class="live-score">' + (usFirst ? sc.f+'–'+sc.a : sc.a+'–'+sc.f) + '</div>'
         +   (usFirst ? teamOpp : teamUs) + '</div>'
-        + '<div class="live-clock" id="live-banner-clock">' + fmtClock(elapsed) + '</div>'
+        + '<div class="live-clock" data-live-clock="' + m.id + '">' + fmtClock(liveElapsedMs(l)) + '</div>'
         + '<div class="live-period">' + periodLabel(l) + '</div>'
         + ((l.events||[]).length
             ? '<div class="pub-live-events">' + (l.events||[]).slice().reverse().map(e =>
@@ -2153,6 +2155,12 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
                 + '<span>' + liveEventText(e) + '</span></div>').join('') + '</div>'
             : '')
         + '</div>';
+    }
+    function renderLiveBanner(){
+      const el = document.getElementById('public-live-banner');
+      if(!el) return;
+      const active = findActiveLiveMatches();
+      el.innerHTML = active.length ? active.map(liveCardHtml).join('') : '';
     }
 
     // ── Klock-tick (bara text, ingen omritning) ───────────────────────────────
@@ -2164,11 +2172,10 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         cEl.textContent = fmtClock(ms);
         cEl.classList.toggle('over', ms >= (l.periodLength||20)*60000);
       }
-      const bEl = document.getElementById('live-banner-clock');
-      if(bEl){
-        const bm = findActiveLiveMatch();
-        if(bm) bEl.textContent = fmtClock(liveElapsedMs(liveOf(bm)));
-      }
+      document.querySelectorAll('[data-live-clock]').forEach(el => {
+        const bm = liveMatchById(el.dataset.liveClock);
+        if(bm && liveOf(bm)) el.textContent = fmtClock(liveElapsedMs(liveOf(bm)));
+      });
     }
     if(!liveTicker) liveTicker = setInterval(tickLiveClocks, 1000);
 
