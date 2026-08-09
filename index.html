@@ -1560,8 +1560,25 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     function findActiveLiveMatch(){ return matches.find(m => isLiveActive(liveOf(m))) || null; }
 
     function isSteMatch(m){ return !!m && m.type === 'S:t Erikscupen'; }
-    function defaultPeriodCount(m){ return isSteMatch(m) ? 3 : 3; }
-    function defaultPeriodLength(){ return 20; }
+    // Plockar speltiden ur matchens anteckningar, t.ex. "2×13 min" eller "3x20 min"
+    function parseSpeltid(m){
+      const hit = /(\d+)\s*[×x]\s*(\d+)\s*min/i.exec((m && m.notes) || '');
+      if(!hit) return null;
+      const count = +hit[1], length = +hit[2];
+      if(count !== 2 && count !== 3) return null;
+      if(length < 1 || length > 60) return null;
+      return {count, length};
+    }
+    function defaultPeriodCount(m){
+      if(isSteMatch(m)) return 3;
+      const s = parseSpeltid(m);
+      return s ? s.count : 3;
+    }
+    function defaultPeriodLength(m){
+      if(isSteMatch(m)) return 20;
+      const s = parseSpeltid(m);
+      return s ? s.length : 20;
+    }
 
     function liveElapsedMs(l){
       if(!l) return 0;
@@ -1648,7 +1665,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       return {
         status:'paused',
         periodCount: isSteMatch(m) ? 3 : (+(document.getElementById('live-period-count')||{}).value || defaultPeriodCount(m)),
-        periodLength: isSteMatch(m) ? 20 : (+(document.getElementById('live-period-length')||{}).value || defaultPeriodLength()),
+        periodLength: isSteMatch(m) ? 20 : (+(document.getElementById('live-period-length')||{}).value || defaultPeriodLength(m)),
         currentPeriod: 1,
         startedAt: null,
         elapsedMs: 0,
@@ -1835,14 +1852,16 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       const pcEl = document.getElementById('live-period-count');
       const plEl = document.getElementById('live-period-length');
       const pc   = l ? (l.periodCount || 3)  : (ste ? 3  : defaultPeriodCount(m));
-      const pl   = l ? (l.periodLength || 20): (ste ? 20 : defaultPeriodLength());
+      const pl   = l ? (l.periodLength || 20): (ste ? 20 : defaultPeriodLength(m));
       pcEl.value = String(pc);
       plEl.value = String(pl);
       const lockCfg = ste || (l && l.status !== 'finished' && (l.events||[]).length > 0);
       pcEl.disabled = lockCfg; plEl.disabled = lockCfg;
       document.getElementById('live-cfg-note').textContent =
         ste ? 'S:t Erikscupen spelas 3 × 20 min – låst.'
-            : (lockCfg ? 'Låst medan matchen pågår.' : 'Välj upplägg innan du startar matchen.');
+            : (lockCfg ? 'Låst medan matchen pågår.'
+                       : (parseSpeltid(m) ? 'Hämtat från spelprogrammet: ' + pc + ' × ' + pl + ' min. Ändra vid behov.'
+                                          : 'Välj upplägg innan du startar matchen.'));
 
       const dateStr = m.date ? new Date(m.date+'T12:00:00').toLocaleDateString('sv-SE',{weekday:'short',day:'numeric',month:'short'}) : '';
       const lag = resolveMatchLag(m);
