@@ -1144,7 +1144,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       if(!filtered.length){tbody.innerHTML='';noEl.style.display='block';return;}
       noEl.style.display='none';
       function matchRowHtml(m,isNext,isLastPlayed){
-        const lv=liveOf(m), isLive=isLiveActive(lv), lsc=isLive?liveScore(lv):null;
+        const lv=liveOf(m), isLive=isLivePublic(m), lsc=isLive?liveScore(lv):null;
         const hasRes=m.goalsFor!=null&&m.goalsAgainst!=null;
         const dateStr=m.date?new Date(m.date+'T12:00:00').toLocaleDateString('sv-SE',{day:'numeric',month:'short'}): '–';
         let scorerStr=(m.scorers||[]).map(formatScorerSummary).join(', ');
@@ -1167,7 +1167,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
           '<td>'+(m.lineup?'<span style="color:#6ab4ff;font-size:11px;">👁 Uppst.</span>':'')+'</td>'+
           '</tr>';
       }
-      const liveNow=filtered.filter(m=>isLiveActive(liveOf(m)));
+      const liveNow=filtered.filter(m=>isLivePublic(m));
       const liveIds=new Set(liveNow.map(m=>m.id));
       const rest=filtered.filter(m=>!liveIds.has(m.id));
       const played=rest.filter(m=>m.goalsFor!=null&&m.goalsAgainst!=null);
@@ -1714,7 +1714,16 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     function isLiveActive(l){ return !!l && (l.status === 'running' || l.status === 'paused'); }
     function liveMatchById(id){ return matches.find(m => m.id === id) || null; }
     function findActiveLiveMatch(){ return matches.find(m => isLiveActive(liveOf(m))) || null; }
-    function findActiveLiveMatches(){ return matches.filter(m => isLiveActive(liveOf(m))); }
+    function findActiveLiveMatches(){ return matches.filter(m => isLivePublic(m)); }
+    // Har matchen faktiskt kommit igang? Ett feltryck som nollstallts ska inte synas publikt.
+    function liveHasStarted(l){
+      if(!l) return false;
+      return l.status === 'running' || (l.events||[]).length > 0 || liveElapsedMs(l) > 0;
+    }
+    function isLivePublic(m){
+      const l = liveOf(m);
+      return isLiveActive(l) && liveHasStarted(l);
+    }
 
     function isSteMatch(m){ return !!m && m.type === 'S:t Erikscupen'; }
     // Plockar speltiden ur matchens anteckningar, t.ex. "2×13 min" eller "3x20 min"
@@ -1944,7 +1953,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     };
     window.liveClearMatch = () => {
       const m = liveMatchById(liveMatchId); if(!m || !currentUser || !db) return;
-      if(!confirm('Rensa all live-data för matchen? Sparat resultat påverkas inte.')) return;
+      if(!confirm('Ta bort matchklockan? Matchen läggs tillbaka som ospelad. Sparat resultat påverkas inte.')) return;
       m.live = null;
       updateDoc(doc(db,'matches',m.id), {live:null})
         .then(() => { renderLive(); renderLiveBanner(); renderPublicMatches(); })
@@ -2095,7 +2104,9 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
            +   '<button class="live-btn ghost" onclick="liveNextPeriod()">⏭ Nästa ' + ((l.periodCount||3)===2?'halvlek':'period') + '</button>'
            +   '<button class="live-btn ghost" onclick="liveResetPeriod()">↺ Nollställ tid</button>'
            + '</div>'
-           + '<button class="live-btn finish" onclick="liveFinishMatch()">✅ Avsluta match &amp; spara resultat</button>';
+           + '<button class="live-btn finish" onclick="liveFinishMatch()">✅ Avsluta match &amp; spara resultat</button>'
+           + ((l.events||[]).length ? ''
+               : '<button class="live-btn ghost" onclick="liveClearMatch()">✕ Avbryt matchklockan</button>');
       } else {
         h += '<div class="live-btn-row">'
            +   '<button class="live-btn ghost" onclick="liveReopenMatch()">↩ Återuppta</button>'
