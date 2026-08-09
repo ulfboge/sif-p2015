@@ -438,6 +438,9 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       <div class="public-matches-wrap">
         <h2>Matcher <span id="pub-match-count" style="font-size:14px;color:var(--text-muted);font-weight:600;"></span></h2>
         <div class="filter-bar-wrap">
+          <p class="filter-lag-label">Säsong</p>
+          <div class="filter-bar" id="pub-season-filter-bar"></div>
+          <p class="filter-lag-label">Spelform</p>
           <div class="filter-bar" id="pub-filter-bar">
             <button class="filter-btn active" data-filter="all" onclick="setPublicFilter('all')">Alla</button>
             <button class="filter-btn" data-filter="Träningsmatch" onclick="setPublicFilter('Träningsmatch')">Träningsmatch</button>
@@ -513,6 +516,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         </div>
         <div class="match-list-panel">
           <h2>Sparade matcher <span id="adm-match-count" style="font-size:14px;color:var(--text-muted);font-weight:600;"></span></h2>
+          <div class="filter-bar" id="admin-season-filter-bar" style="margin-bottom:8px;"></div>
           <div class="filter-bar" id="admin-lag-filter-bar" style="margin-bottom:12px;">
             <button class="filter-btn active" data-admin-lag="all" onclick="setAdminLagFilter('all')">Alla lag</button>
             <button class="filter-btn" data-admin-lag="Gul" onclick="setAdminLagFilter('Gul')">Gul</button>
@@ -529,6 +533,9 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     <div class="stats-layout">
       <div>
         <div class="filter-bar-wrap">
+          <p class="filter-lag-label">Säsong</p>
+          <div class="stats-filter-bar" id="stats-season-filter-bar"></div>
+          <p class="filter-lag-label">Spelform</p>
           <div class="stats-filter-bar" id="stats-filter-bar">
             <button class="filter-btn active" data-filter="all" onclick="setStatsFilter('all')">Alla matcher</button>
             <button class="filter-btn" data-filter="Träningsmatch" onclick="setStatsFilter('Träningsmatch')">Träningsmatch</button>
@@ -692,6 +699,9 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     let statsFilter   = 'all';
     let statsLagFilter= 'all';
     let statsTurFilter= 'all';
+    let pubSeasonFilter   = null;   // null = inte satt än, fylls vid första render
+    let statsSeasonFilter = null;
+    let adminSeasonFilter = null;
     let adminLagFilter= 'all';
     let dragData = null, dragEnabled = false;
 
@@ -1048,6 +1058,43 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       if(n.startsWith('Svart ·'))return 'Svart';
       return '';
     }
+    // Säsongen härleds ur matchdatumet – inget eget fält behövs.
+    function matchSeason(m){
+      const d = (m && m.date) || '';
+      return /^\d{4}-/.test(d) ? d.slice(0,4) : '';
+    }
+    function allSeasons(){
+      const set = new Set();
+      matches.forEach(m => { const y = matchSeason(m); if(y) set.add(y); });
+      return [...set].sort((a,b) => b.localeCompare(a));
+    }
+    function currentSeason(){ return String(new Date().getFullYear()); }
+    function initialSeason(){
+      const seasons = allSeasons();
+      if(!seasons.length) return 'all';
+      return seasons.includes(currentSeason()) ? currentSeason() : seasons[0];
+    }
+    function seasonPasses(m, filter){
+      return filter === 'all' || matchSeason(m) === filter;
+    }
+    // Ritar en säsongsrad och returnerar det aktiva värdet
+    function renderSeasonBar(barId, current, setter){
+      const bar = document.getElementById(barId);
+      const seasons = allSeasons();
+      if(!bar) return current === null ? 'all' : current;
+      if(current === null) current = initialSeason();
+      if(current !== 'all' && !seasons.includes(current)) current = initialSeason();
+      if(seasons.length < 2){ bar.innerHTML = ''; bar.style.display = 'none'; return seasons.length ? seasons[0] : 'all'; }
+      bar.style.display = '';
+      bar.innerHTML = seasons.map(y =>
+        '<button class="filter-btn'+(current===y?' active':'')+'" onclick="'+setter+'(\''+y+'\')">'+y+'</button>'
+      ).join('') + '<button class="filter-btn'+(current==='all'?' active':'')+'" onclick="'+setter+'(\'all\')">Alla säsonger</button>';
+      return current;
+    }
+    window.setPublicSeasonFilter = y => { pubSeasonFilter = y; renderPublicMatches(); };
+    window.setStatsSeasonFilter  = y => { statsSeasonFilter = y; renderStats(); };
+    window.setAdminSeasonFilter  = y => { adminSeasonFilter = y; renderMatchList(); };
+
     function resolveTurnering(m){
       return (m && typeof m.turnering === 'string' && m.turnering.trim()) ? m.turnering.trim() : '';
     }
@@ -1055,9 +1102,12 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       const t = resolveTurnering(m);
       return t ? '<span class="tour-badge">' + esc(t) + '</span>' : '';
     }
-    function allTurneringar(){
+    function allTurneringar(seasonFilter){
       const seen = new Map();
-      matches.forEach(m => { const t = resolveTurnering(m); if(t && !seen.has(t)) seen.set(t, (m.date||'')); });
+      matches.forEach(m => {
+        if(seasonFilter && !seasonPasses(m, seasonFilter)) return;
+        const t = resolveTurnering(m); if(t && !seen.has(t)) seen.set(t, (m.date||''));
+      });
       return [...seen.entries()].sort((a,b) => (b[1]||'').localeCompare(a[1]||'')).map(e => e[0]);
     }
     function lagBadgeHtml(lag){
@@ -1083,8 +1133,10 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       renderMatchList();
     };
     function renderPublicMatches(){
+      pubSeasonFilter=renderSeasonBar('pub-season-filter-bar',pubSeasonFilter,'setPublicSeasonFilter');
       let filtered=pubFilter==='all'?matches.slice():matches.filter(m=>effectiveMatchType(m)===pubFilter);
       if(pubLagFilter!=='all')filtered=filtered.filter(m=>matchPassesLagFilter(m,pubLagFilter));
+      filtered=filtered.filter(m=>seasonPasses(m,pubSeasonFilter));
       const tbody=document.getElementById('pub-matches-tbody');
       const noEl=document.getElementById('pub-no-matches');
       document.getElementById('pub-match-count').textContent='('+filtered.length+')';
@@ -1159,8 +1211,10 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     function renderMatchList(){
       const list=document.getElementById('admin-match-list');
       if(!list)return;
+      adminSeasonFilter=renderSeasonBar('admin-season-filter-bar',adminSeasonFilter,'setAdminSeasonFilter');
       let listMatches=matches.slice();
       if(adminLagFilter!=='all')listMatches=listMatches.filter(m=>matchPassesLagFilter(m,adminLagFilter));
+      listMatches=listMatches.filter(m=>seasonPasses(m,adminSeasonFilter));
       document.getElementById('adm-match-count').textContent='('+listMatches.length+')';
       if(!matches.length){list.innerHTML='<div class="no-matches">Inga matcher sparade ännu</div>';return;}
       if(!listMatches.length){list.innerHTML='<div class="no-matches">Inga matcher för valt lag</div>';return;}
@@ -1449,7 +1503,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       const wrap=document.getElementById('stats-tur-wrap');
       const bar=document.getElementById('stats-tur-filter-bar');
       if(!wrap||!bar)return;
-      const tours=allTurneringar();
+      const tours=allTurneringar(statsSeasonFilter);
       if(!tours.length){ wrap.style.display='none'; statsTurFilter='all'; bar.innerHTML=''; return; }
       if(statsTurFilter!=='all'&&!tours.includes(statsTurFilter))statsTurFilter='all';
       wrap.style.display='';
@@ -1457,7 +1511,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         '<button class="filter-btn'+(statsTurFilter===t?' active':'')+'" onclick="setStatsTurFilter(\''+t.replace(/'/g,"\\'")+'\')">'
         +(t==='all'?'Alla turneringar':esc(t))+'</button>').join('');
       const dl=document.getElementById('turnering-list');
-      if(dl)dl.innerHTML=tours.map(t=>'<option value="'+esc(t)+'"></option>').join('');
+      if(dl)dl.innerHTML=allTurneringar().map(t=>'<option value="'+esc(t)+'"></option>').join('');
     }
     function renderTournamentCard(list){
       const el=document.getElementById('stats-tournaments');
@@ -1465,7 +1519,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       const played=list.filter(m=>resolveTurnering(m)&&m.goalsFor!=null&&m.goalsAgainst!=null);
       const acc={};
       played.forEach(m=>{
-        const t=resolveTurnering(m);
+        const t=resolveTurnering(m)+(matchSeason(m)?' '+matchSeason(m):'');
         if(!acc[t])acc[t]={w:0,d:0,l:0,gf:0,ga:0,date:m.date||''};
         const r=acc[t];
         if(m.goalsFor>m.goalsAgainst)r.w++; else if(m.goalsFor===m.goalsAgainst)r.d++; else r.l++;
@@ -1491,8 +1545,10 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       }).join('');
     }
     function renderStats(){
+      statsSeasonFilter=renderSeasonBar('stats-season-filter-bar',statsSeasonFilter,'setStatsSeasonFilter');
       let ms=statsFilter==='all'?matches.slice():matches.filter(m=>effectiveMatchType(m)===statsFilter);
       if(statsLagFilter!=='all')ms=ms.filter(m=>matchPassesLagFilter(m,statsLagFilter));
+      ms=ms.filter(m=>seasonPasses(m,statsSeasonFilter));
       renderStatsTurBar();
       renderTournamentCard(ms.slice());
       if(statsTurFilter!=='all')ms=ms.filter(m=>resolveTurnering(m)===statsTurFilter);
