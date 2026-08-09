@@ -137,6 +137,12 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 .venue-badge.home{background:rgba(245,216,0,.15);color:var(--yellow);border:1px solid rgba(245,216,0,.3);}
 .venue-badge.away{background:rgba(100,180,255,.1);color:#6ab4ff;border:1px solid rgba(100,180,255,.25);}
 .type-badge{background:rgba(255,255,255,.07);color:var(--text-muted);border:1px solid #333;}
+.tour-badge{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:4px;white-space:nowrap;background:rgba(106,180,255,.13);color:#8ec5ff;border:1px solid rgba(106,180,255,.32);margin-left:4px;}
+.tour-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #222;font-size:13px;}
+.tour-row:last-child{border-bottom:none;}
+.tour-name{font-weight:600;color:var(--text-light);overflow-wrap:anywhere;}
+.tour-rec{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text-muted);white-space:nowrap;}
+.tour-goals{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:14px;color:var(--yellow);white-space:nowrap;}
 .lag-badge{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-right:8px;vertical-align:middle;white-space:nowrap;}
 .lag-badge.lag-gul{background:rgba(234,179,8,.2);color:#facc15;border:1px solid rgba(250,204,21,.35);}
 .lag-badge.lag-svart{background:rgba(120,120,130,.25);color:#d4d4d8;border:1px solid #555;}
@@ -488,6 +494,9 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
             </div>
             <div class="form-group"><label>Anteckningar</label><input type="text" id="f-notes" placeholder="Fritext…"></div>
           </div>
+          <div class="form-row">
+            <div class="form-group"><label>Turnering</label><input type="text" id="f-turnering" placeholder="t.ex. Stockancupen" list="turnering-list"><datalist id="turnering-list"></datalist></div>
+          </div>
           <div class="scorer-section">
             <label>Målgörare</label>
             <div id="scorer-rows"></div>
@@ -526,6 +535,10 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
             <button class="filter-btn" data-filter="S:t Erikscupen" onclick="setStatsFilter('S:t Erikscupen')">S:t Erikscupen</button>
             <button class="filter-btn" data-filter="Cup" onclick="setStatsFilter('Cup')">Cup</button>
           </div>
+          <div id="stats-tur-wrap" style="display:none;">
+            <p class="filter-lag-label">Turnering</p>
+            <div class="stats-filter-bar" id="stats-tur-filter-bar"></div>
+          </div>
           <p class="filter-lag-label">Vårt lag</p>
           <div class="stats-filter-bar" id="stats-lag-filter-bar">
             <button class="filter-btn active" data-stats-lag="all" onclick="setStatsLagFilter('all')">Alla lag</button>
@@ -540,6 +553,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         <div class="stat-card"><h3>Assistliga</h3><div id="stats-assists"></div></div>
         <div class="stat-card"><h3>Formkurva (senaste 10)</h3><div id="stats-form"></div></div>
         <div class="stat-card"><h3>Hållna halvlekar</h3><div id="stats-cleanhalves"></div></div>
+        <div class="stat-card"><h3>Turneringar</h3><div id="stats-tournaments"></div></div>
         <div class="stat-card"><h3>Inbördes möten</h3><div id="stats-h2h"></div></div>
         <div class="stat-card"><h3>Hemma vs Borta</h3><div id="stats-venue"></div></div>
       </div>
@@ -677,6 +691,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     let pubLagFilter  = 'all';
     let statsFilter   = 'all';
     let statsLagFilter= 'all';
+    let statsTurFilter= 'all';
     let adminLagFilter= 'all';
     let dragData = null, dragEnabled = false;
 
@@ -1033,6 +1048,18 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       if(n.startsWith('Svart ·'))return 'Svart';
       return '';
     }
+    function resolveTurnering(m){
+      return (m && typeof m.turnering === 'string' && m.turnering.trim()) ? m.turnering.trim() : '';
+    }
+    function tourBadgeHtml(m){
+      const t = resolveTurnering(m);
+      return t ? '<span class="tour-badge">' + esc(t) + '</span>' : '';
+    }
+    function allTurneringar(){
+      const seen = new Map();
+      matches.forEach(m => { const t = resolveTurnering(m); if(t && !seen.has(t)) seen.set(t, (m.date||'')); });
+      return [...seen.entries()].sort((a,b) => (b[1]||'').localeCompare(a[1]||'')).map(e => e[0]);
+    }
     function lagBadgeHtml(lag){
       if(lag==='Gul')return '<span class="lag-badge lag-gul">Gul</span>';
       if(lag==='Svart')return '<span class="lag-badge lag-svart">Svart</span>';
@@ -1080,7 +1107,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
                  (!isLive&&isNext?'<span class="next-match-label">NÄSTA</span> ':'')+dateStr+'</td>'+
           '<td style="font-weight:600;">'+lagBadgeHtml(lag)+esc(m.opponent)+'</td>'+
           '<td><span class="venue-badge '+(m.venue==='home'?'home':'away')+'">'+(m.venue==='home'?'H':'B')+'</span></td>'+
-          '<td><span class="type-badge">'+esc(effectiveMatchType(m))+'</span></td>'+
+          '<td><span class="type-badge">'+esc(effectiveMatchType(m))+'</span>'+tourBadgeHtml(m)+'</td>'+
           '<td class="result-cell'+((hasRes||isLive)?'':' no-res')+(isLastPlayed?' last-played-result':'')+'">'+
             (isLive?'<span class="live-now">'+lsc.f+'–'+lsc.a+'</span>':(hasRes?m.goalsFor+'–'+m.goalsAgainst:'?–?'))+'</td>'+
           '<td class="scorers-cell">'+(scorerStr||'–')+'</td>'+
@@ -1149,7 +1176,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
           '<div class="match-card-header">'
             +'<span class="venue-badge '+(m.venue==='home'?'home':'away')+'">'+(m.venue==='home'?'HEMMA':'BORTA')+'</span>'
             +(lag?'<span class="lag-badge '+(lag==='Gul'?'lag-gul':'lag-svart')+'" style="margin-left:4px;">'+lag+'</span>':'')
-            +'<span class="type-badge" style="margin-left:4px;">'+esc(effectiveMatchType(m))+'</span>'
+            +'<span class="type-badge" style="margin-left:4px;">'+esc(effectiveMatchType(m))+'</span>'+tourBadgeHtml(m)
             +'<div class="match-result-badge'+(hasRes?'':' no-res')+'">'+(hasRes?m.goalsFor+'–'+m.goalsAgainst:'?–?')+'</div>'
           +'</div>'
           +'<div class="match-opponent">'+esc(m.opponent)+'</div>'
@@ -1196,7 +1223,8 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       const data={opponent,date:document.getElementById('f-date').value,venue:document.getElementById('f-venue').value,
         type:document.getElementById('f-type').value,goalsFor:gf!==''?+gf:null,goalsAgainst:gaTotal,
         periodsAgainst:anyPeriod?[p1,p2,p3]:null,
-        notes:document.getElementById('f-notes').value.trim(),lag:lagPick||null,scorers:getScorers(),assists:getAssists(),lineup:null};
+        notes:document.getElementById('f-notes').value.trim(),
+        turnering:document.getElementById('f-turnering').value.trim()||null,lag:lagPick||null,scorers:getScorers(),assists:getAssists(),lineup:null};
       const btn=document.getElementById('btn-save-match');
       btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
       try{
@@ -1213,6 +1241,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       document.getElementById('f-goals-for').value='';
       document.getElementById('f-ga-p1').value='';document.getElementById('f-ga-p2').value='';document.getElementById('f-ga-p3').value='';
       document.getElementById('f-notes').value='';document.getElementById('f-lag').value='';
+      document.getElementById('f-turnering').value='';
       document.getElementById('scorer-rows').innerHTML='';document.getElementById('assist-rows').innerHTML='';
     }
     window.cancelEdit=()=>{editingId=null;document.getElementById('form-title').textContent='Ny match';document.getElementById('btn-cancel-edit').style.display='none';clearForm();};
@@ -1228,6 +1257,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       document.getElementById('f-ga-p2').value=pa&&pa[1]!=null?pa[1]:'';
       document.getElementById('f-ga-p3').value=pa&&pa[2]!=null?pa[2]:'';
       document.getElementById('f-notes').value=m.notes||'';
+      document.getElementById('f-turnering').value=resolveTurnering(m);
       const lagVal=m.lag==='Gul'||m.lag==='Svart'?m.lag:resolveMatchLag(m);
       document.getElementById('f-lag').value=(lagVal==='Gul'||lagVal==='Svart')?lagVal:'';
       document.getElementById('scorer-rows').innerHTML='';
@@ -1247,7 +1277,6 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     function buildImportMatchNotes(m){
       const parts=[];
       if(m.lag&&!isTrainingMatch(m))parts.push(m.lag);
-      if(m.turnering)parts.push(m.turnering);
       if(m.tid)parts.push(m.tid);
       if(m.plan)parts.push(m.plan);
       if(m.vecka!=null&&m.vecka!=='')parts.push('v.'+m.vecka);
@@ -1288,6 +1317,8 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         if(existing.type!==row.type)patch.type=row.type;
       }
       if((existing.notes||'')!==notes)patch.notes=notes;
+      const tur=row.turnering||null;
+      if((existing.turnering==null?null:existing.turnering)!==tur)patch.turnering=tur;
       if(existing.venue!==row.venue)patch.venue=row.venue;
       if(Object.keys(patch).length===0)return false;
       await updateDoc(doc(db,'matches',existing.id),patch);
@@ -1316,6 +1347,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         const data={
           opponent:m.opponent,date:m.date,venue:m.venue,type:m.type,
           notes:buildImportMatchNotes(m),
+          turnering:m.turnering||null,
           lag:isTrainingMatch(m)?null:(m.lag||null),
           goalsFor:null,goalsAgainst:null,scorers:[],lineup:null
         };
@@ -1368,7 +1400,8 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       const dateStr=m.date?new Date(m.date+'T12:00:00').toLocaleDateString('sv-SE',{day:'numeric',month:'short',year:'numeric'}):'';
       document.getElementById('modal-title').textContent=m.opponent;
       const lagStr=resolveMatchLag(m);
-      document.getElementById('modal-meta').textContent=(m.venue==='home'?'Hemma':'Borta')+' · '+effectiveMatchType(m)+(lagStr?' · '+lagStr:'')+(dateStr?' · '+dateStr:'')+(hasRes?' · '+m.goalsFor+'–'+m.goalsAgainst:'');
+      const turStr=resolveTurnering(m);
+      document.getElementById('modal-meta').textContent=(m.venue==='home'?'Hemma':'Borta')+' · '+effectiveMatchType(m)+(turStr?' · '+turStr:'')+(lagStr?' · '+lagStr:'')+(dateStr?' · '+dateStr:'')+(hasRes?' · '+m.goalsFor+'–'+m.goalsAgainst:'');
       const rows={gk:'modal-gk',def:'modal-def',dmid:'modal-dmid',mid:'modal-mid',fwd:'modal-fwd'};
       Object.entries(rows).forEach(([row,elId])=>{
         const el=document.getElementById(elId);el.innerHTML='';
@@ -1408,9 +1441,61 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       renderStats();
     };
 
+    window.setStatsTurFilter=t=>{
+      statsTurFilter=t;
+      renderStats();
+    };
+    function renderStatsTurBar(){
+      const wrap=document.getElementById('stats-tur-wrap');
+      const bar=document.getElementById('stats-tur-filter-bar');
+      if(!wrap||!bar)return;
+      const tours=allTurneringar();
+      if(!tours.length){ wrap.style.display='none'; statsTurFilter='all'; bar.innerHTML=''; return; }
+      if(statsTurFilter!=='all'&&!tours.includes(statsTurFilter))statsTurFilter='all';
+      wrap.style.display='';
+      bar.innerHTML=['all'].concat(tours).map(t=>
+        '<button class="filter-btn'+(statsTurFilter===t?' active':'')+'" onclick="setStatsTurFilter(\''+t.replace(/'/g,"\\'")+'\')">'
+        +(t==='all'?'Alla turneringar':esc(t))+'</button>').join('');
+      const dl=document.getElementById('turnering-list');
+      if(dl)dl.innerHTML=tours.map(t=>'<option value="'+esc(t)+'"></option>').join('');
+    }
+    function renderTournamentCard(list){
+      const el=document.getElementById('stats-tournaments');
+      if(!el)return;
+      const played=list.filter(m=>resolveTurnering(m)&&m.goalsFor!=null&&m.goalsAgainst!=null);
+      const acc={};
+      played.forEach(m=>{
+        const t=resolveTurnering(m);
+        if(!acc[t])acc[t]={w:0,d:0,l:0,gf:0,ga:0,date:m.date||''};
+        const r=acc[t];
+        if(m.goalsFor>m.goalsAgainst)r.w++; else if(m.goalsFor===m.goalsAgainst)r.d++; else r.l++;
+        r.gf+=m.goalsFor||0; r.ga+=m.goalsAgainst||0;
+        if((m.date||'')>r.date)r.date=m.date||'';
+      });
+      const rows=Object.entries(acc).sort((a,b)=>(b[1].date||'').localeCompare(a[1].date||''));
+      if(!rows.length){
+        const upcoming=list.filter(m=>resolveTurnering(m)).length;
+        el.innerHTML='<div style="color:var(--text-muted);font-size:13px;">'
+          +(upcoming?'Inga spelade turneringsmatcher ännu.':'Inga turneringar registrerade.')+'</div>';
+        return;
+      }
+      el.innerHTML=rows.map(([t,r])=>{
+        const diff=r.gf-r.ga;
+        return '<div class="tour-row">'
+          +'<span class="tour-name">'+esc(t)+'</span>'
+          +'<span class="tour-rec"><span style="color:#7fda5f;">'+r.w+'</span> · '
+            +'<span style="color:#d4d460;">'+r.d+'</span> · '
+            +'<span style="color:#da5f5f;">'+r.l+'</span></span>'
+          +'<span class="tour-goals">'+r.gf+'–'+r.ga+' ('+(diff>=0?'+':'')+diff+')</span>'
+        +'</div>';
+      }).join('');
+    }
     function renderStats(){
       let ms=statsFilter==='all'?matches.slice():matches.filter(m=>effectiveMatchType(m)===statsFilter);
       if(statsLagFilter!=='all')ms=ms.filter(m=>matchPassesLagFilter(m,statsLagFilter));
+      renderStatsTurBar();
+      renderTournamentCard(ms.slice());
+      if(statsTurFilter!=='all')ms=ms.filter(m=>resolveTurnering(m)===statsTurFilter);
       const played=ms.filter(m=>m.goalsFor!=null&&m.goalsAgainst!=null);
       const wins=played.filter(m=>m.goalsFor>m.goalsAgainst).length;
       const draws=played.filter(m=>m.goalsFor===m.goalsAgainst).length;
