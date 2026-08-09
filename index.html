@@ -2017,7 +2017,8 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 
       const dateStr = m.date ? new Date(m.date+'T12:00:00').toLocaleDateString('sv-SE',{weekday:'short',day:'numeric',month:'short'}) : '';
       const lag = resolveMatchLag(m);
-      const meta = [dateStr, (m.venue==='home'?'Hemma':'Borta'), effectiveMatchType(m), lag].filter(Boolean).join(' · ');
+      const meta = [dateStr, (m.venue==='home'?'Hemma':'Borta'), effectiveMatchType(m),
+                    resolveTurnering(m), lag].filter(Boolean).join(' · ');
 
       if(!l){
         body.innerHTML =
