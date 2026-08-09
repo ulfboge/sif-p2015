@@ -1247,6 +1247,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     function buildImportMatchNotes(m){
       const parts=[];
       if(m.lag&&!isTrainingMatch(m))parts.push(m.lag);
+      if(m.turnering)parts.push(m.turnering);
       if(m.tid)parts.push(m.tid);
       if(m.plan)parts.push(m.plan);
       if(m.vecka!=null&&m.vecka!=='')parts.push('v.'+m.vecka);

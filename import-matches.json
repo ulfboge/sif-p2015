@@ -21,5 +21,14 @@
   { "date": "2026-05-09", "opponent": "IFK Lidingö FK 17 blå", "venue": "away", "type": "S:t Erikscupen", "lag": "Svart", "plan": "Bodal 1", "tid": "09:00" },
   { "date": "2026-08-22", "opponent": "Täby FK 31", "venue": "home", "type": "S:t Erikscupen", "lag": "Svart", "plan": "Stockhagens IP 2", "tid": "11:00" },
   { "date": "2026-09-06", "opponent": "Djurgårdens IF FF 12 Blå", "venue": "away", "type": "S:t Erikscupen", "lag": "Svart", "plan": "Östermalms IP 3", "tid": "11:30" },
-  { "date": "2026-09-19", "opponent": "Kälvesta IoF P2015 Röd", "venue": "home", "type": "S:t Erikscupen", "lag": "Svart", "plan": "Stockhagens IP 2", "tid": "11:00" }
+  { "date": "2026-09-19", "opponent": "Kälvesta IoF P2015 Röd", "venue": "home", "type": "S:t Erikscupen", "lag": "Svart", "plan": "Stockhagens IP 2", "tid": "11:00" },
+
+  { "date": "2026-08-16", "opponent": "Sollentuna FK SYD 1", "venue": "home", "type": "Cup", "lag": "Gul", "turnering": "Stockancupen", "plan": "Stockhagens IP 4", "tid": "09:00" },
+  { "date": "2026-08-16", "opponent": "Örby IS 2", "venue": "home", "type": "Cup", "lag": "Gul", "turnering": "Stockancupen", "plan": "Stockhagens IP 4", "tid": "10:00" },
+  { "date": "2026-08-16", "opponent": "Täby FK 2", "venue": "home", "type": "Cup", "lag": "Gul", "turnering": "Stockancupen", "plan": "Stockhagens IP 2", "tid": "11:00" },
+  { "date": "2026-08-16", "opponent": "IFK Lidingö 10", "venue": "home", "type": "Cup", "lag": "Gul", "turnering": "Stockancupen", "plan": "Stockhagens IP 4", "tid": "12:00" },
+  { "date": "2026-08-16", "opponent": "IFK Vaxholm 2", "venue": "home", "type": "Cup", "lag": "Svart", "turnering": "Stockancupen", "plan": "Stockhagens IP 1", "tid": "09:30" },
+  { "date": "2026-08-16", "opponent": "Täby FK 1", "venue": "home", "type": "Cup", "lag": "Svart", "turnering": "Stockancupen", "plan": "Stockhagens IP 1", "tid": "10:30" },
+  { "date": "2026-08-16", "opponent": "IFK Vaxholm 1", "venue": "home", "type": "Cup", "lag": "Svart", "turnering": "Stockancupen", "plan": "Stockhagens IP 1", "tid": "11:30" },
+  { "date": "2026-08-16", "opponent": "Örby IS 1", "venue": "home", "type": "Cup", "lag": "Svart", "turnering": "Stockancupen", "plan": "Stockhagens IP 2", "tid": "12:30" }
 ]
