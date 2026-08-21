@@ -1876,16 +1876,20 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       return matches.slice().sort((a,b) => (a.date||'').localeCompare(b.date||''));
     }
     // Närmaste match: pågående live > dagens > närmast kommande > senaste spelade
+    // En match med sparat resultat är avgjord – ska inte återföreslås som "dagens match" i matchkontrollen.
+    function isMatchDecided(m){ return !!m && m.goalsFor!=null && m.goalsAgainst!=null; }
     function suggestLiveMatchId(){
       const active = findActiveLiveMatch();
       if(active) return active.id;
       const today = new Date().toISOString().slice(0,10);
-      const list  = liveSelectableMatches();
+      const all   = liveSelectableMatches();
+      const list  = all.filter(m => !isMatchDecided(m));
       const todays = list.filter(m => m.date === today);
       if(todays.length) return todays[0].id;
       const future = list.filter(m => (m.date||'') >= today);
       if(future.length) return future[0].id;
-      return list.length ? list[list.length-1].id : null;
+      // Inga ospelade matcher kvar (t.ex. säsongen slut) – visa i så fall den senaste ändå.
+      return all.length ? all[all.length-1].id : null;
     }
     // Nästa match efter en given match (kronologiskt), t.ex. efter att live-data rensats.
     function suggestNextLiveMatchId(afterId){
@@ -1893,6 +1897,8 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       const idx  = list.findIndex(m => m.id === afterId);
       if(idx >= 0){
         const rest = list.slice(idx + 1);
+        const nextUndecided = rest.find(m => !isMatchDecided(m));
+        if(nextUndecided) return nextUndecided.id;
         if(rest.length) return rest[0].id;
       }
       const suggestion = suggestLiveMatchId();
