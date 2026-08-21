@@ -1793,6 +1793,17 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       if(future.length) return future[0].id;
       return list.length ? list[list.length-1].id : null;
     }
+    // Nästa match efter en given match (kronologiskt), t.ex. efter att live-data rensats.
+    function suggestNextLiveMatchId(afterId){
+      const list = liveSelectableMatches();
+      const idx  = list.findIndex(m => m.id === afterId);
+      if(idx >= 0){
+        const rest = list.slice(idx + 1);
+        if(rest.length) return rest[0].id;
+      }
+      const suggestion = suggestLiveMatchId();
+      return (suggestion && suggestion !== afterId) ? suggestion : null;
+    }
 
     window.selectLiveMatch = id => {
       liveMatchId = id || null;
@@ -1954,9 +1965,15 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     window.liveClearMatch = () => {
       const m = liveMatchById(liveMatchId); if(!m || !currentUser || !db) return;
       if(!confirm('Ta bort matchklockan? Matchen läggs tillbaka som ospelad. Sparat resultat påverkas inte.')) return;
+      const clearedId = m.id;
       m.live = null;
       updateDoc(doc(db,'matches',m.id), {live:null})
-        .then(() => { renderLive(); renderLiveBanner(); renderPublicMatches(); })
+        .then(() => {
+          const nextId = suggestNextLiveMatchId(clearedId);
+          if(nextId) liveMatchId = nextId;
+          goalDraft = null;
+          renderLive(); renderLiveBanner(); renderPublicMatches();
+        })
         .catch(e => alert('Kunde inte rensa: ' + e.message));
     };
 
