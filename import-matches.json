@@ -29,5 +29,6 @@
   {"date": "2026-08-16", "opponent": "Hammarby IF FF Lag 3", "venue": "home", "type": "Cup", "lag": "Svart", "turnering": "Stockancupen", "plan": "Stockhagens IP 1", "tid": "09:30", "speltid": "2×13 min"},
   {"date": "2026-08-16", "opponent": "IFK Vaxholm 2", "venue": "home", "type": "Cup", "lag": "Svart", "turnering": "Stockancupen", "plan": "Stockhagens IP 1", "tid": "10:30", "speltid": "2×13 min"},
   {"date": "2026-08-16", "opponent": "IFK Lidingö 10", "venue": "home", "type": "Cup", "lag": "Svart", "turnering": "Stockancupen", "plan": "Stockhagens IP 4", "tid": "11:30", "speltid": "2×13 min"},
-  {"date": "2026-08-16", "opponent": "Sollentuna FK SYD 1", "venue": "home", "type": "Cup", "lag": "Svart", "turnering": "Stockancupen", "plan": "Stockhagens IP 2", "tid": "12:30", "speltid": "2×13 min"}
+  {"date": "2026-08-16", "opponent": "Sollentuna FK SYD 1", "venue": "home", "type": "Cup", "lag": "Svart", "turnering": "Stockancupen", "plan": "Stockhagens IP 2", "tid": "12:30", "speltid": "2×13 min"},
+  {"date": "2026-09-20", "opponent": "Danderyds SK", "venue": "away", "type": "Träningsmatch", "plan": "Danderydsvallen", "tid": "17:15"}
 ]
