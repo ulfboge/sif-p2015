@@ -594,6 +594,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
           <div class="form-group">
             <label>Perioder</label>
             <select id="live-period-count" onchange="updateLiveConfig()">
+              <option value="1">1 period</option>
               <option value="2">2 perioder</option>
               <option value="3">3 perioder</option>
             </select>
@@ -1839,12 +1840,12 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     }
 
     function isSteMatch(m){ return !!m && m.type === 'S:t Erikscupen'; }
-    // Plockar speltiden ur matchens anteckningar, t.ex. "2×13 min" eller "3x20 min"
+    // Plockar speltiden ur matchens anteckningar, t.ex. "1×25 min", "2×13 min" eller "3x20 min"
     function parseSpeltid(m){
       const hit = /(\d+)\s*[×x]\s*(\d+)\s*min/i.exec((m && m.notes) || '');
       if(!hit) return null;
       const count = +hit[1], length = +hit[2];
-      if(count !== 2 && count !== 3) return null;
+      if(count < 1 || count > 3) return null;
       if(length < 1 || length > 60) return null;
       return {count, length};
     }
@@ -1884,10 +1885,17 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     function periodLabel(l){
       const pc = (l && l.periodCount) || 3;
       const cp = (l && l.currentPeriod) || 1;
+      if(pc === 1) return 'Match';
       return (pc === 2 ? 'Halvlek ' : 'Period ') + cp + ' av ' + pc;
     }
     function shortPeriod(l, p){
-      return ((l && l.periodCount) === 2 ? 'H' : 'P') + p;
+      const pc = (l && l.periodCount) || 3;
+      if(pc === 1) return '';
+      return (pc === 2 ? 'H' : 'P') + p;
+    }
+    function eventMinuteLabel(l, period, minute){
+      const p = shortPeriod(l, period);
+      return (p ? p + ' ' : '') + minute + "'";
     }
 
     // ── Val av match ──────────────────────────────────────────────────────────
@@ -2167,8 +2175,9 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 
       const dateStr = m.date ? new Date(m.date+'T12:00:00').toLocaleDateString('sv-SE',{weekday:'short',day:'numeric',month:'short'}) : '';
       const lag = resolveMatchLag(m);
+      const samlingHit = /Samling\s+(\d{1,2}:\d{2})/i.exec(m.notes || '');
       const meta = [dateStr, (m.venue==='home'?'Hemma':'Borta'), effectiveMatchType(m),
-                    resolveTurnering(m), lag].filter(Boolean).join(' · ');
+                    resolveTurnering(m), lag, samlingHit ? ('Samling '+samlingHit[1]) : ''].filter(Boolean).join(' · ');
 
       if(!l){
         body.innerHTML =
@@ -2218,7 +2227,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
           h += '<div class="live-goalsheet">'
              +   '<div class="live-goalsheet-head">'
              +     '<span class="live-goalsheet-title">' + (stepAssist ? 'Vem la assisten?' : 'Vem gjorde målet?') + '</span>'
-             +     '<span class="live-goalsheet-time">' + shortPeriod(l, goalDraft.period) + ' ' + goalDraft.minute + "'</span>"
+             +     '<span class="live-goalsheet-time">' + eventMinuteLabel(l, goalDraft.period, goalDraft.minute) + '</span>'
              +   '</div>';
           if(stepAssist){
             h += '<div style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">⚽ ' + esc(goalDraft.scorer) + '</div>'
@@ -2237,7 +2246,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         }
 
         h += '<div class="live-btn-row">'
-           +   '<button class="live-btn ghost" onclick="liveNextPeriod()">⏭ Nästa ' + ((l.periodCount||3)===2?'halvlek':'period') + '</button>'
+           +   ((l.periodCount||3)===1 ? '' : '<button class="live-btn ghost" onclick="liveNextPeriod()">⏭ Nästa ' + ((l.periodCount||3)===2?'halvlek':'period') + '</button>')
            +   '<button class="live-btn ghost" onclick="liveResetPeriod()">↺ Nollställ tid</button>'
            + '</div>'
            + '<button class="live-btn finish" onclick="liveFinishMatch()">✅ Avsluta match &amp; spara resultat</button>'
@@ -2265,7 +2274,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       if(!ev.length) return '<div class="live-empty">Inga mål ännu.</div>';
       return '<div class="live-log">' + ev.map(e =>
         '<div class="live-log-item' + (e.type==='against'?' against':'') + '">'
-        + '<span class="live-log-time">' + shortPeriod(l, e.period) + ' ' + e.minute + "'</span>"
+        + '<span class="live-log-time">' + eventMinuteLabel(l, e.period, e.minute) + '</span>'
         + '<span class="live-log-txt">' + liveEventText(e) + '</span>'
         + (withDelete ? '<button class="live-log-del" title="Ta bort" onclick="liveDeleteEvent(\''+e.id+'\')">✕</button>' : '')
         + '</div>').join('') + '</div>';
@@ -2298,7 +2307,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         + ((l.events||[]).length
             ? '<div class="pub-live-events">' + (l.events||[]).slice().reverse().map(e =>
                 '<div class="pub-live-ev' + (e.type==='against'?' against':'') + '">'
-                + '<span class="t">' + shortPeriod(l, e.period) + ' ' + e.minute + "'</span>"
+                + '<span class="t">' + eventMinuteLabel(l, e.period, e.minute) + '</span>'
                 + '<span>' + liveEventText(e) + '</span></div>').join('') + '</div>'
             : '')
         + '</div>';
