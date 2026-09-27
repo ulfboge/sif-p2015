@@ -1116,15 +1116,34 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         if(m.lag!=null)m.lag=null;
       }));
     }
+    // Första klockslaget i anteckningarna är avspark (t.ex. "09:00 · plan").
+    function matchKickoffMinutes(m){
+      const src=(m&&typeof m.tid==='string'&&m.tid.trim())?m.tid:((m&&m.notes)||'');
+      const hit=/(\d{1,2}):(\d{2})/.exec(src);
+      if(!hit)return null;
+      const h=+hit[1], min=+hit[2];
+      if(h>23||min>59)return null;
+      return h*60+min;
+    }
+    function compareMatches(a,b){
+      const byDate=(a.date||'').localeCompare(b.date||'');
+      if(byDate)return byDate;
+      const ta=matchKickoffMinutes(a), tb=matchKickoffMinutes(b);
+      if(ta==null&&tb==null)return 0;
+      if(ta==null)return 1;
+      if(tb==null)return -1;
+      return ta-tb;
+    }
     async function loadMatches(){
       try{
         const q=query(collection(db,'matches'),orderBy('date','asc'));
         const snap=await getDocs(q);
         matches=snap.docs.map(d=>({id:d.id,...d.data()}));
       }catch(e){
-        try{const snap=await getDocs(collection(db,'matches'));matches=snap.docs.map(d=>({id:d.id,...d.data()}));matches.sort((a,b)=>(a.date||'').localeCompare(b.date||''));}
+        try{const snap=await getDocs(collection(db,'matches'));matches=snap.docs.map(d=>({id:d.id,...d.data()}));}
         catch(e2){matches=[];}
       }
+      matches.sort(compareMatches);
       try{ await backfillLegacyMatchStaff(); }catch(e3){ console.warn('Staff backfill skipped:', e3); }
       try{ await backfillSerieMatches(); }catch(e4){ console.warn('Serie backfill skipped:', e4); }
       renderMatchList(); renderPublicMatches(); renderStats(); renderLiveBanner();
@@ -1708,7 +1727,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         '<div style="color:var(--text-muted);font-size:13px;">Inga matcher med perioder registrerade</div>';
 
       // Form (last 10 played)
-      const last10=[...played].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,10).reverse();
+      const last10=[...played].sort((a,b)=>compareMatches(b,a)).slice(0,10).reverse();
       document.getElementById('stats-form').innerHTML=last10.length?
         '<div class="form-strip">'+last10.map(m=>{
           const r=m.goalsFor>m.goalsAgainst?'W':m.goalsFor===m.goalsAgainst?'D':'L';
@@ -1873,7 +1892,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 
     // ── Val av match ──────────────────────────────────────────────────────────
     function liveSelectableMatches(){
-      return matches.slice().sort((a,b) => (a.date||'').localeCompare(b.date||''));
+      return matches.slice().sort(compareMatches);
     }
     // Närmaste match: pågående live > dagens > närmast kommande > senaste spelade
     // En match med sparat resultat är avgjord – ska inte återföreslås som "dagens match" i matchkontrollen.
@@ -2313,7 +2332,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       try{
         liveUnsub = onSnapshot(collection(db,'matches'), snap => {
           const fresh = snap.docs.map(d => ({id:d.id, ...d.data()}));
-          fresh.sort((a,b) => (a.date||'').localeCompare(b.date||''));
+          fresh.sort(compareMatches);
           matches = fresh;
           renderLiveBanner(); renderPublicMatches(); renderLive(); renderMatchList(); renderStats();
         }, err => console.warn('Live-lyssnare stoppad:', err));
