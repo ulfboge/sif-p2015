@@ -36,5 +36,6 @@
   {"date": "2026-10-04", "opponent": "Rönninge Salem Fotboll 2", "venue": "away", "type": "Cup", "turnering": "AIK Höstcup", "plan": "Järvastadens IP 3 (lätt/medel)", "tid": "09:00", "samling": "08:55", "speltid": "1×25 min"},
   {"date": "2026-10-04", "opponent": "Norrtulls SK Vit 2", "venue": "away", "type": "Cup", "turnering": "AIK Höstcup", "plan": "Järvastadens IP 2 (lätt/medel)", "tid": "10:00", "samling": "09:55", "speltid": "1×25 min"},
   {"date": "2026-10-04", "opponent": "Rönninge Salem Fotboll 1", "venue": "away", "type": "Cup", "turnering": "AIK Höstcup", "plan": "Järvastadens IP 3 (lätt/medel)", "tid": "11:00", "samling": "10:55", "speltid": "1×25 min"},
-  {"date": "2026-10-04", "opponent": "AIK FF", "venue": "away", "type": "Cup", "turnering": "AIK Höstcup", "plan": "Järvastadens IP 1 (lätt/medel)", "tid": "12:00", "samling": "11:55", "speltid": "1×25 min"}
+  {"date": "2026-10-04", "opponent": "AIK FF", "venue": "away", "type": "Cup", "turnering": "AIK Höstcup", "plan": "Järvastadens IP 1 (lätt/medel)", "tid": "12:00", "samling": "11:55", "speltid": "1×25 min"},
+  {"date": "2026-11-14", "opponent": "IFK Bergshamra", "venue": "away", "type": "Träningsmatch", "plan": "Bergshamra IP (medel)", "tid": "15:30"}
 ]
