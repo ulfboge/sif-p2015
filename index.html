@@ -69,7 +69,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 .row-gk  {bottom:4%;height:13%;gap:10px;}
 .row-def {bottom:21%;height:13%;gap:10px;}
 .row-dmid{bottom:38%;height:13%;gap:10px;}
-.row-mid {bottom:55%;height:13%;gap:10%;}
+.row-mid {bottom:55%;height:13%;gap:4px;justify-content:space-evenly;padding:0 4px;}
 .row-fwd {bottom:72%;height:13%;gap:10px;}
 .row-label{position:absolute;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.28);pointer-events:none;z-index:6;left:7px;}
 .drop-slot{width:68px;height:68px;border-radius:50%;border:2px dashed rgba(255,255,255,.22);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:border-color .15s,background .15s;position:relative;cursor:default;flex-shrink:0;}
@@ -201,7 +201,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 .lineup-pitch{background:var(--pitch);border-radius:10px;border:3px solid #1a3d0f;position:relative;overflow:hidden;width:100%;aspect-ratio:.72;margin-bottom:16px;}
 .lineup-pitch::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(to bottom,rgba(0,0,0,.06) 0,rgba(0,0,0,.06) 40px,transparent 40px,transparent 80px);pointer-events:none;z-index:0;}
 .lineup-row{position:absolute;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:10px;z-index:5;}
-.lineup-row.mid-row{gap:10%;}
+.lineup-row.mid-row{gap:4px;justify-content:space-evenly;padding:0 4px;}
 .lineup-token{width:60px;height:60px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;}
 .lineup-token.outfield{background:var(--yellow);border:3px solid var(--black);}
 .lineup-token.goalkeeper{background:var(--gk-green);border:3px solid var(--black);}
@@ -411,7 +411,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
           <div class="row-zone row-gk"   data-row="gk"   data-max="1"></div>
           <div class="row-zone row-def"  data-row="def"  data-max="2"></div>
           <div class="row-zone row-dmid" data-row="dmid" data-max="1"></div>
-          <div class="row-zone row-mid"  data-row="mid"  data-max="3"></div>
+          <div class="row-zone row-mid"  data-row="mid"  data-max="4"></div>
           <div class="row-zone row-fwd"  data-row="fwd"  data-max="1"></div>
         </div>
         <div class="legend">
@@ -701,7 +701,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     function formatScorerDetail(s){return (s.name===OWN_GOAL_SCORER?'🥅 ':'⚽ ')+s.name+(s.goals>1?' × '+s.goals:'');}
 
     // ── PITCH STATE ───────────────────────────────────────────────────────────
-    const ROW_CONFIG = {gk:{max:1},def:{max:2},dmid:{max:1},mid:{max:3},fwd:{max:1}};
+    const ROW_CONFIG = {gk:{max:1},def:{max:2},dmid:{max:1},mid:{max:4},fwd:{max:1}};
     let pitchState = {};
     Object.keys(ROW_CONFIG).forEach(k => pitchState[k] = Array(ROW_CONFIG[k].max).fill(null));
     let benchState      = [null,null,null,null,null];
