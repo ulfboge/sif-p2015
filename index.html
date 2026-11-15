@@ -65,12 +65,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 .pitch::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(to bottom,rgba(0,0,0,.06) 0,rgba(0,0,0,.06) 40px,transparent 40px,transparent 80px);pointer-events:none;z-index:0;}
 .pitch-markings{position:absolute;inset:0;pointer-events:none;z-index:1;}
 .pitch-markings svg{width:100%;height:100%;}
-.row-zone{position:absolute;left:0;right:0;display:flex;justify-content:center;align-items:center;z-index:5;}
-.row-gk  {bottom:4%;height:13%;gap:10px;}
-.row-def {bottom:21%;height:13%;gap:10px;}
-.row-dmid{bottom:38%;height:13%;gap:10px;}
-.row-mid {bottom:55%;height:13%;gap:4px;justify-content:space-evenly;padding:0 4px;}
-.row-fwd {bottom:72%;height:13%;gap:10px;}
+.row-zone{position:absolute;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:10px;z-index:5;}
 .row-label{position:absolute;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.28);pointer-events:none;z-index:6;left:7px;}
 .drop-slot{width:68px;height:68px;border-radius:50%;border:2px dashed rgba(255,255,255,.22);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:border-color .15s,background .15s;position:relative;cursor:default;flex-shrink:0;}
 .drop-slot.drag-over{border-color:rgba(255,255,255,.7);background:var(--drag-over);}
@@ -201,7 +196,11 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 .lineup-pitch{background:var(--pitch);border-radius:10px;border:3px solid #1a3d0f;position:relative;overflow:hidden;width:100%;aspect-ratio:.72;margin-bottom:16px;}
 .lineup-pitch::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(to bottom,rgba(0,0,0,.06) 0,rgba(0,0,0,.06) 40px,transparent 40px,transparent 80px);pointer-events:none;z-index:0;}
 .lineup-row{position:absolute;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:10px;z-index:5;}
-.lineup-row.mid-row{gap:4px;justify-content:space-evenly;padding:0 4px;}
+.row-zone.wide,.lineup-row.wide{justify-content:space-between;padding:0 3%;}
+.row-label.centered{left:50%;transform:translateX(-50%);}
+.formation-picker{display:flex;justify-content:center;gap:6px;margin-bottom:8px;}
+.formation-btn{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:.05em;padding:5px 14px;border-radius:6px;border:1.5px solid var(--panel-border);background:transparent;color:var(--text-muted);cursor:pointer;}
+.formation-btn.active{border-color:var(--yellow);color:var(--yellow);background:rgba(245,216,0,.08);}
 .lineup-token{width:60px;height:60px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;}
 .lineup-token.outfield{background:var(--yellow);border:3px solid var(--black);}
 .lineup-token.goalkeeper{background:var(--gk-green);border:3px solid var(--black);}
@@ -331,7 +330,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
   .main-layout{flex-direction:column;align-items:center;}
   .player-list-panel,.right-panel{width:100%;max-width:420px;}
   #player-list,#staff-list{flex-direction:row;flex-wrap:wrap;}
-  .pitch-wrap{max-width:440px;margin:0 auto;}
+  .pitch-wrap{width:100%;max-width:440px;margin:0 auto;}
   .pitch{max-width:440px;margin:0 auto;}
   .matches-layout{grid-template-columns:1fr;}
   .summary-numbers{grid-template-columns:repeat(2,1fr);}
@@ -387,6 +386,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       </div>
 
       <div class="pitch-wrap">
+        <div class="formation-picker" id="formation-picker"></div>
         <div class="formation-label" id="formation-label">Drag spelare till planen · Max 7 på plan</div>
         <div class="pitch" id="pitch">
           <div class="pitch-markings">
@@ -403,16 +403,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
               <circle cx="150" cy="368" r="2.5" fill="rgba(255,255,255,0.45)"/>
             </svg>
           </div>
-          <div class="row-label" style="bottom:calc(4% + 3.5%);">MÅL</div>
-          <div class="row-label" style="bottom:calc(21% + 3.5%);">BACK</div>
-          <div class="row-label" style="bottom:calc(38% + 3.5%);">DEF MF</div>
-          <div class="row-label" style="bottom:calc(55% + 3.5%);">MF</div>
-          <div class="row-label" style="bottom:calc(72% + 3.5%);">FORWARD</div>
-          <div class="row-zone row-gk"   data-row="gk"   data-max="1"></div>
-          <div class="row-zone row-def"  data-row="def"  data-max="2"></div>
-          <div class="row-zone row-dmid" data-row="dmid" data-max="1"></div>
-          <div class="row-zone row-mid"  data-row="mid"  data-max="4"></div>
-          <div class="row-zone row-fwd"  data-row="fwd"  data-max="1"></div>
+          <div id="pitch-rows"></div>
         </div>
         <div class="legend">
           <div class="legend-item"><div class="legend-dot outfield"></div>Utespelare</div>
@@ -629,16 +620,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
             <rect x="110" y="402" width="80" height="14" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.2"/>
           </svg>
         </div>
-        <div class="row-label" style="bottom:calc(4% + 3.5%);">MÅL</div>
-        <div class="row-label" style="bottom:calc(21% + 3.5%);">BACK</div>
-        <div class="row-label" style="bottom:calc(38% + 3.5%);">DEF MF</div>
-        <div class="row-label" style="bottom:calc(55% + 3.5%);">MF</div>
-        <div class="row-label" style="bottom:calc(72% + 3.5%);">FORWARD</div>
-        <div class="lineup-row" style="bottom:4%;height:13%;"  id="modal-gk"></div>
-        <div class="lineup-row" style="bottom:21%;height:13%;" id="modal-def"></div>
-        <div class="lineup-row" style="bottom:38%;height:13%;" id="modal-dmid"></div>
-        <div class="lineup-row mid-row" style="bottom:55%;height:13%;" id="modal-mid"></div>
-        <div class="lineup-row" style="bottom:72%;height:13%;" id="modal-fwd"></div>
+        <div id="modal-rows"></div>
       </div>
       <div class="info-box" id="modal-bench-wrap" style="display:none;">
         <div class="info-box-title">Avbytare</div>
@@ -701,9 +683,62 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     function formatScorerDetail(s){return (s.name===OWN_GOAL_SCORER?'🥅 ':'⚽ ')+s.name+(s.goals>1?' × '+s.goals:'');}
 
     // ── PITCH STATE ───────────────────────────────────────────────────────────
-    const ROW_CONFIG = {gk:{max:1},def:{max:2},dmid:{max:1},mid:{max:4},fwd:{max:1}};
-    let pitchState = {};
-    Object.keys(ROW_CONFIG).forEach(k => pitchState[k] = Array(ROW_CONFIG[k].max).fill(null));
+    // Formationer: varje rad har id, etikett, position (bottom i %), antal platser och layout.
+    // wide = platserna läggs ut mot kanterna (wingbacks).
+    const FORMATIONS = {
+      '2-3-1': [
+        {id:'gk',   label:'MÅL',        bottom:4,  max:1},
+        {id:'def',  label:'BACK',       bottom:21, max:2},
+        {id:'dmid', label:'DEF MF',     bottom:38, max:1},
+        {id:'mid',  label:'MF',         bottom:55, max:3, gap:'10%'},
+        {id:'fwd',  label:'FORWARD',    bottom:72, max:1}
+      ],
+      '1-4-1': [
+        {id:'gk',   label:'MÅL',        bottom:4,  max:1},
+        {id:'cb',   label:'MITTBACK',   bottom:20, max:1},
+        {id:'wb',   label:'WINGBACK',   bottom:36, max:2, wide:true},
+        {id:'cm',   label:'CENTRAL MF', bottom:51, max:2, gap:'14%'},
+        {id:'fwd',  label:'FORWARD',    bottom:71, max:1}
+      ]
+    };
+    const DEFAULT_FORMATION = '2-3-1';
+    let currentFormation = DEFAULT_FORMATION;
+    const formationRows = f => FORMATIONS[f] || FORMATIONS[DEFAULT_FORMATION];
+    function emptyPitch(f){ const p={}; formationRows(f).forEach(r=>p[r.id]=Array(r.max).fill(null)); return p; }
+    let pitchState = emptyPitch(currentFormation);
+
+    // Bygger etiketter + rader för en formation i en container (redigeringsplan eller matchvy)
+    function buildRowsHTML(f, zoneClass, idPrefix){
+      return formationRows(f).map(r=>{
+        const style='bottom:'+r.bottom+'%;height:13%;'+(r.gap?'gap:'+r.gap+';':'');
+        return '<div class="row-label'+(r.wide?' centered':'')+'" style="bottom:calc('+r.bottom+'% + 3.5%);">'+r.label+'</div>'
+          +'<div class="'+zoneClass+(r.wide?' wide':'')+'" style="'+style+'" data-row="'+r.id+'" data-max="'+r.max+'"'+(idPrefix?' id="'+idPrefix+r.id+'"':'')+'></div>';
+      }).join('');
+    }
+    function renderFormationPicker(){
+      const el=document.getElementById('formation-picker'); if(!el) return;
+      el.innerHTML=Object.keys(FORMATIONS).map(f=>'<button class="formation-btn'+(f===currentFormation?' active':'')+'" data-f="'+f+'">'+f+'</button>').join('');
+      el.querySelectorAll('.formation-btn').forEach(b=>b.addEventListener('click',()=>setFormation(b.dataset.f)));
+    }
+    // Byt formation och flytta med spelarna: MV och forward behåller sina platser,
+    // övriga utespelare fylls på i ordning bakifrån. Överskott hamnar på bänken.
+    function setFormation(f){
+      if(!FORMATIONS[f] || f===currentFormation) return;
+      const oldRows=formationRows(currentFormation);
+      const gk=(pitchState.gk||[]).filter(Boolean), fwd=(pitchState.fwd||[]).filter(Boolean);
+      const rest=[]; oldRows.forEach(r=>{ if(r.id!=='gk'&&r.id!=='fwd') (pitchState[r.id]||[]).forEach(n=>n&&rest.push(n)); });
+      currentFormation=f; pitchState=emptyPitch(f);
+      const overflow=[];
+      const place=(rowId,list)=>{ const arr=pitchState[rowId]; list.forEach(n=>{ const i=arr.indexOf(null); if(i>-1) arr[i]=n; else overflow.push(n); }); };
+      place('gk',gk); place('fwd',fwd);
+      const outRows=formationRows(f).filter(r=>r.id!=='gk'&&r.id!=='fwd');
+      rest.forEach(n=>{ const r=outRows.find(r=>pitchState[r.id].includes(null)); if(r) pitchState[r.id][pitchState[r.id].indexOf(null)]=n; else overflow.push(n); });
+      // Ledig forwardplats tar emot överskott innan bänken
+      const left=[]; overflow.forEach(n=>{ const fa=pitchState.fwd, i=n!==gk[0]&&fa?fa.indexOf(null):-1; if(i>-1) fa[i]=n; else left.push(n); });
+      left.forEach(n=>{ const i=benchState.indexOf(null); if(i>-1) benchState[i]=n; });
+      document.getElementById('pitch-rows').innerHTML=buildRowsHTML(f,'row-zone','');
+      clearTapSelection(); renderFormationPicker(); render();
+    }
     let benchState      = [null,null,null,null,null];
     let staffBenchState = [null,null];
 
@@ -1074,13 +1109,13 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 
     window.resetPitch=()=>{
       if(!currentUser)return;
-      Object.keys(ROW_CONFIG).forEach(k=>pitchState[k]=Array(ROW_CONFIG[k].max).fill(null));
+      pitchState=emptyPitch(currentFormation);
       benchState=[null,null,null,null,null]; staffBenchState=[null,null]; clearTapSelection(); render();
     };
     window.saveLineupToMatch=async()=>{
       if(!currentUser||!activeLinkId)return;
       const idx=matches.findIndex(m=>m.id===activeLinkId);if(idx===-1)return;
-      const lineup={pitch:JSON.parse(JSON.stringify(pitchState)),bench:[...benchState],staffBench:[...staffBenchState]};
+      const lineup={formation:currentFormation,pitch:JSON.parse(JSON.stringify(pitchState)),bench:[...benchState],staffBench:[...staffBenchState]};
       try{await updateDoc(doc(db,'matches',activeLinkId),{lineup});matches[idx].lineup=lineup;renderMatchList();renderPublicMatches();alert('Laguppställningen sparad!');}
       catch(e){alert('Fel: '+e.message);}
     };
@@ -1573,9 +1608,11 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       const lagStr=resolveMatchLag(m);
       const turStr=resolveTurnering(m);
       document.getElementById('modal-meta').textContent=(m.venue==='home'?'Hemma':'Borta')+' · '+effectiveMatchType(m)+(turStr?' · '+turStr:'')+(lagStr?' · '+lagStr:'')+(dateStr?' · '+dateStr:'')+(hasRes?' · '+m.goalsFor+'–'+m.goalsAgainst:'');
-      const rows={gk:'modal-gk',def:'modal-def',dmid:'modal-dmid',mid:'modal-mid',fwd:'modal-fwd'};
-      Object.entries(rows).forEach(([row,elId])=>{
-        const el=document.getElementById(elId);el.innerHTML='';
+      const mf=FORMATIONS[m.lineup.formation]?m.lineup.formation:DEFAULT_FORMATION;
+      document.getElementById('modal-rows').innerHTML=buildRowsHTML(mf,'lineup-row','modal-');
+      if(m.lineup.formation) document.getElementById('modal-meta').textContent+=' · '+mf;
+      formationRows(mf).forEach(({id:row})=>{
+        const el=document.getElementById('modal-'+row);
         (m.lineup.pitch[row]||[]).forEach(name=>{
           if(!name)return;
           el.innerHTML+='<div class="lineup-token '+(row==='gk'?'goalkeeper':'outfield')+'">'
@@ -1806,7 +1843,8 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     }
 
     // ── INIT ──────────────────────────────────────────────────────────────────
-    Object.keys(ROW_CONFIG).forEach(k=>pitchState[k]=Array(ROW_CONFIG[k].max).fill(null));
+    document.getElementById('pitch-rows').innerHTML=buildRowsHTML(currentFormation,'row-zone','');
+    renderFormationPicker();
     initListDropTargets();
     initTapSelect();
     render();
