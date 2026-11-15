@@ -197,6 +197,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 .lineup-pitch::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(to bottom,rgba(0,0,0,.06) 0,rgba(0,0,0,.06) 40px,transparent 40px,transparent 80px);pointer-events:none;z-index:0;}
 .lineup-row{position:absolute;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:10px;z-index:5;}
 .row-zone.wide,.lineup-row.wide{justify-content:space-between;padding:0 3%;}
+.row-zone.spread,.lineup-row.spread{justify-content:space-around;padding:0 4%;}
 .row-label.centered{left:50%;transform:translateX(-50%);}
 .formation-picker{display:flex;justify-content:center;gap:6px;margin-bottom:8px;}
 .formation-btn{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:.05em;padding:5px 14px;border-radius:6px;border:1.5px solid var(--panel-border);background:transparent;color:var(--text-muted);cursor:pointer;}
@@ -690,7 +691,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         {id:'gk',   label:'MÅL',        bottom:4,  max:1},
         {id:'def',  label:'BACK',       bottom:21, max:2},
         {id:'dmid', label:'DEF MF',     bottom:38, max:1},
-        {id:'mid',  label:'MF',         bottom:55, max:3, gap:'10%'},
+        {id:'mid',  label:'MF',         bottom:55, max:3, spread:true},
         {id:'fwd',  label:'FORWARD',    bottom:72, max:1}
       ],
       '1-4-1': [
@@ -712,7 +713,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       return formationRows(f).map(r=>{
         const style='bottom:'+r.bottom+'%;height:13%;'+(r.gap?'gap:'+r.gap+';':'');
         return '<div class="row-label'+(r.wide?' centered':'')+'" style="bottom:calc('+r.bottom+'% + 3.5%);">'+r.label+'</div>'
-          +'<div class="'+zoneClass+(r.wide?' wide':'')+'" style="'+style+'" data-row="'+r.id+'" data-max="'+r.max+'"'+(idPrefix?' id="'+idPrefix+r.id+'"':'')+'></div>';
+          +'<div class="'+zoneClass+(r.wide?' wide':'')+(r.spread?' spread':'')+'" style="'+style+'" data-row="'+r.id+'" data-max="'+r.max+'"'+(idPrefix?' id="'+idPrefix+r.id+'"':'')+'></div>';
       }).join('');
     }
     function renderFormationPicker(){
