@@ -219,6 +219,11 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 .row-label.centered{left:50%;transform:translateX(-50%);}
 .formation-picker{display:flex;justify-content:center;gap:6px;margin-bottom:8px;}
 .formation-btn{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:.05em;padding:5px 14px;border-radius:6px;border:1.5px solid var(--panel-border);background:transparent;color:var(--text-muted);cursor:pointer;}
+.formation-picker{flex-direction:column;align-items:center;}
+.size-picker,.formation-row{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;}
+.size-picker{margin-bottom:6px;}
+.format-badge{margin-left:4px;background:rgba(106,180,255,.12);color:#6ab4ff;}
+.size-btn{font-size:12px;padding:3px 12px;}
 .formation-btn.active{border-color:var(--yellow);color:var(--yellow);background:rgba(245,216,0,.08);}
 .lineup-token{width:60px;height:60px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;}
 .lineup-token.outfield{background:var(--yellow);border:3px solid var(--black);}
@@ -473,6 +478,10 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
             <button class="filter-btn" data-filter="S:t Erikscupen" onclick="setPublicFilter('S:t Erikscupen')">S:t Erikscupen</button>
             <button class="filter-btn" data-filter="Cup" onclick="setPublicFilter('Cup')">Cup</button>
           </div>
+          <div class="format-filter-wrap" style="display:none;">
+            <p class="filter-lag-label">Antal spelare</p>
+            <div class="filter-bar" id="pub-format-filter-bar"></div>
+          </div>
           <p class="filter-lag-label">Vårt lag (P2015)</p>
           <div class="filter-bar" id="pub-lag-filter-bar">
             <button class="filter-btn active" data-lag-filter="all" onclick="setPublicLagFilter('all')">Alla lag</button>
@@ -509,6 +518,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
           <div class="form-row">
             <div class="form-group"><label>Hemma / Borta</label><select id="f-venue"><option value="home">Hemma</option><option value="away">Borta</option></select></div>
             <div class="form-group"><label>Spelform</label><select id="f-type"><option value="Träningsmatch">Träningsmatch</option><option value="S:t Erikscupen">S:t Erikscupen</option><option value="Cup">Cup</option><option value="Annan">Annan</option></select></div>
+            <div class="form-group" style="max-width:110px;"><label>Antal</label><select id="f-format"><option value="7">7 mot 7</option><option value="9">9 mot 9</option></select></div>
             <div class="form-group" style="max-width:140px;"><label>Vårt lag</label><select id="f-lag"><option value="">–</option><option value="Gul">Gul</option><option value="Svart">Svart</option></select></div>
           </div>
           <div class="form-row">
@@ -585,6 +595,10 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
             <button class="filter-btn" data-filter="Träningsmatch" onclick="setStatsFilter('Träningsmatch')">Träningsmatch</button>
             <button class="filter-btn" data-filter="S:t Erikscupen" onclick="setStatsFilter('S:t Erikscupen')">S:t Erikscupen</button>
             <button class="filter-btn" data-filter="Cup" onclick="setStatsFilter('Cup')">Cup</button>
+          </div>
+          <div class="format-filter-wrap" style="display:none;">
+            <p class="filter-lag-label">Antal spelare</p>
+            <div class="stats-filter-bar" id="stats-format-filter-bar"></div>
           </div>
           <div id="stats-tur-wrap" style="display:none;">
             <p class="filter-lag-label">Turnering</p>
@@ -754,10 +768,40 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         {id:'wb',   label:'WINGBACK',   bottom:36, max:2, wide:true},
         {id:'cm',   label:'CENTRAL MF', bottom:51, max:2, gap:'14%'},
         {id:'fwd',  label:'FORWARD',    bottom:71, max:1}
+      ],
+      // ── 9 mot 9 ──
+      '3-3-2': [
+        {id:'gk',   label:'MÅL',        bottom:4,  max:1},
+        {id:'def',  label:'BACK',       bottom:22, max:3, spread:true},
+        {id:'mid',  label:'MF',         bottom:45, max:3, spread:true},
+        {id:'fwd',  label:'FORWARD',    bottom:69, max:2, gap:'18%'}
+      ],
+      '3-2-3': [
+        {id:'gk',   label:'MÅL',        bottom:4,  max:1},
+        {id:'def',  label:'BACK',       bottom:22, max:3, spread:true},
+        {id:'mid',  label:'MF',         bottom:44, max:2, gap:'18%'},
+        {id:'fwd',  label:'FORWARD',    bottom:68, max:3, spread:true}
+      ],
+      '2-4-2': [
+        {id:'gk',   label:'MÅL',        bottom:4,  max:1},
+        {id:'def',  label:'BACK',       bottom:22, max:2, gap:'18%'},
+        {id:'mid',  label:'MF',         bottom:45, max:4, wide:true},
+        {id:'fwd',  label:'FORWARD',    bottom:69, max:2, gap:'18%'}
       ]
     };
+    // Antal spelare på plan per formation, standardformation och bänkplatser per spelform
+    const FORMATION_SIZE = {'2-3-1':7, '1-4-1':7, '3-3-2':9, '3-2-3':9, '2-4-2':9};
+    const DEFAULT_FORMATION_BY_SIZE = {7:'2-3-1', 9:'3-3-2'};
+    const BENCH_SIZE = {7:5, 9:7};
     const DEFAULT_FORMATION = '2-3-1';
     let currentFormation = DEFAULT_FORMATION;
+    const formationSize = f => FORMATION_SIZE[f] || 7;
+    // Spelform för en match: sparat fält, annars från laguppställningens formation, annars 7
+    function matchFormat(m){
+      if(m && (m.format===7 || m.format===9)) return m.format;
+      if(m && m.lineup && FORMATION_SIZE[m.lineup.formation]) return FORMATION_SIZE[m.lineup.formation];
+      return 7;
+    }
     const formationRows = f => FORMATIONS[f] || FORMATIONS[DEFAULT_FORMATION];
     function emptyPitch(f){ const p={}; formationRows(f).forEach(r=>p[r.id]=Array(r.max).fill(null)); return p; }
     let pitchState = emptyPitch(currentFormation);
@@ -772,8 +816,14 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     }
     function renderFormationPicker(){
       const el=document.getElementById('formation-picker'); if(!el) return;
-      el.innerHTML=Object.keys(FORMATIONS).map(f=>'<button class="formation-btn'+(f===currentFormation?' active':'')+'" data-f="'+f+'">'+f+'</button>').join('');
-      el.querySelectorAll('.formation-btn').forEach(b=>b.addEventListener('click',()=>setFormation(b.dataset.f)));
+      const size=formationSize(currentFormation);
+      el.innerHTML='<div class="size-picker">'+[7,9].map(n=>'<button class="formation-btn size-btn'+(n===size?' active':'')+'" data-size="'+n+'">'+n+' mot '+n+'</button>').join('')+'</div>'
+        +'<div class="formation-row">'+Object.keys(FORMATIONS).filter(f=>formationSize(f)===size)
+          .map(f=>'<button class="formation-btn'+(f===currentFormation?' active':'')+'" data-f="'+f+'">'+f+'</button>').join('')+'</div>';
+      el.querySelectorAll('.formation-btn[data-f]').forEach(b=>b.addEventListener('click',()=>setFormation(b.dataset.f)));
+      el.querySelectorAll('.size-btn').forEach(b=>b.addEventListener('click',()=>{
+        const n=+b.dataset.size; if(n!==formationSize(currentFormation)) setFormation(DEFAULT_FORMATION_BY_SIZE[n]);
+      }));
     }
     // Byt formation och flytta med spelarna: MV och forward behåller sina platser,
     // övriga utespelare fylls på i ordning bakifrån. Överskott hamnar på bänken.
@@ -783,19 +833,35 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       const gk=(pitchState.gk||[]).filter(Boolean), fwd=(pitchState.fwd||[]).filter(Boolean);
       const rest=[]; oldRows.forEach(r=>{ if(r.id!=='gk'&&r.id!=='fwd') (pitchState[r.id]||[]).forEach(n=>n&&rest.push(n)); });
       currentFormation=f; pitchState=emptyPitch(f);
+      setBenchSize(BENCH_SIZE[formationSize(f)]);
       const overflow=[];
       const place=(rowId,list)=>{ const arr=pitchState[rowId]; list.forEach(n=>{ const i=arr.indexOf(null); if(i>-1) arr[i]=n; else overflow.push(n); }); };
       place('gk',gk); place('fwd',fwd);
       const outRows=formationRows(f).filter(r=>r.id!=='gk'&&r.id!=='fwd');
       rest.forEach(n=>{ const r=outRows.find(r=>pitchState[r.id].includes(null)); if(r) pitchState[r.id][pitchState[r.id].indexOf(null)]=n; else overflow.push(n); });
       // Ledig forwardplats tar emot överskott innan bänken
-      const left=[]; overflow.forEach(n=>{ const fa=pitchState.fwd, i=n!==gk[0]&&fa?fa.indexOf(null):-1; if(i>-1) fa[i]=n; else left.push(n); });
+      // …och därefter lediga utespelarplatser, så ingen hamnar på bänken i onödan
+      const left=[]; overflow.forEach(n=>{
+        if(n===gk[0]){ left.push(n); return; }
+        const fa=pitchState.fwd, i=fa?fa.indexOf(null):-1; if(i>-1){ fa[i]=n; return; }
+        const r=outRows.find(r=>pitchState[r.id].includes(null)); if(r){ pitchState[r.id][pitchState[r.id].indexOf(null)]=n; return; }
+        left.push(n);
+      });
       left.forEach(n=>{ const i=benchState.indexOf(null); if(i>-1) benchState[i]=n; });
       document.getElementById('pitch-rows').innerHTML=buildRowsHTML(f,'row-zone','');
       clearTapSelection(); renderFormationPicker(); render();
     }
     let benchState      = [null,null,null,null,null];
     let staffBenchState = [null,null];
+    // Ändrar antal bänkplatser (5 vid 7 mot 7, 7 vid 9 mot 9). Spelare som inte får plats går tillbaka till listan.
+    function setBenchSize(n){
+      const kept=benchState.filter(Boolean).slice(0,n);
+      benchState=kept.concat(Array(Math.max(0,n-kept.length)).fill(null));
+      const wrap=document.getElementById('bench-slots');
+      if(wrap && wrap.children.length!==n){
+        wrap.innerHTML=Array.from({length:n},(_,i)=>'<div class="bench-slot" data-bench="'+i+'" data-type="player">Tom plats</div>').join('');
+      }
+    }
 
     let currentUser  = null;
     let matches      = [];
@@ -1028,7 +1094,8 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         el.textContent = tapSelection.player+' vald · tryck på '+dest+' (tryck igen för att avbryta)';
         return;
       }
-      el.textContent=n===0?'Tryck eller dra spelare till planen · Max 7 på plan':n+'/7 spelare på plan';
+      const max=formationSize(currentFormation);
+      el.textContent=n===0?'Tryck eller dra spelare till planen · Max '+max+' på plan':n+'/'+max+' spelare på plan';
     }
     function updateLinkButton(){
       const btn=document.getElementById('btn-link-lineup');
@@ -1072,7 +1139,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       const{player,stype}=dragData; if(!player)return;
       if(target.type==='pitch'&&stype==='player'){
         const{row,idx}=target,existing=pitchState[row][idx];
-        if(!existing&&onPitchCount()>=7)return;
+        if(!existing&&onPitchCount()>=formationSize(currentFormation))return;
         if(dragData.source==='pitch'&&existing&&!(dragData.row===row&&dragData.idx===idx)){
           pitchState[dragData.row][dragData.idx]=existing;pitchState[row][idx]=player;render();return;
         }
@@ -1165,13 +1232,14 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     window.resetPitch=()=>{
       if(!currentUser)return;
       pitchState=emptyPitch(currentFormation);
-      benchState=[null,null,null,null,null]; staffBenchState=[null,null]; clearTapSelection(); render();
+      benchState=Array(BENCH_SIZE[formationSize(currentFormation)]).fill(null); staffBenchState=[null,null]; clearTapSelection(); render();
     };
     window.saveLineupToMatch=async()=>{
       if(!currentUser||!activeLinkId)return;
       const idx=matches.findIndex(m=>m.id===activeLinkId);if(idx===-1)return;
       const lineup={formation:currentFormation,pitch:JSON.parse(JSON.stringify(pitchState)),bench:[...benchState],staffBench:[...staffBenchState]};
-      try{await updateDoc(doc(db,'matches',activeLinkId),{lineup});matches[idx].lineup=lineup;renderMatchList();renderPublicMatches();alert('Laguppställningen sparad!');}
+      const format=formationSize(currentFormation);
+      try{await updateDoc(doc(db,'matches',activeLinkId),{lineup,format});matches[idx].lineup=lineup;matches[idx].format=format;renderMatchList();renderPublicMatches();renderStats();alert('Laguppställningen sparad!');}
       catch(e){alert('Fel: '+e.message);}
     };
 
@@ -1357,6 +1425,8 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       finally{ btn.disabled = false; }
     };
 
+    // Liten etikett för 9-mannamatcher (7 mot 7 är standard och märks inte ut)
+    function formatBadgeHtml(m){ return matchFormat(m)===9 ? '<span class="type-badge format-badge">9 mot 9</span>' : ''; }
     function effectiveMatchType(m){
       return m.type==='Serie'?'Träningsmatch':(m.type||'Träningsmatch');
     }
@@ -1412,6 +1482,25 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       ).join('') + '<button class="filter-btn'+(current==='all'?' active':'')+'" onclick="'+setter+'(\'all\')">Alla säsonger</button>';
       return current;
     }
+    // ── Filter: 7 mot 7 / 9 mot 9 (visas först när det finns 9-mannamatcher) ──
+    let pubFormatFilter='all', statsFormatFilter='all';
+    function lastUsedFormat(){
+      const withDate=matches.filter(m=>m.date).slice().sort(compareMatches);
+      return withDate.length ? matchFormat(withDate[withDate.length-1]) : 7;
+    }
+    function renderFormatBar(barId, current, setter){
+      const bar=document.getElementById(barId); if(!bar) return 'all';
+      const wrap=bar.closest('.format-filter-wrap');
+      const has9=matches.some(m=>matchFormat(m)===9);
+      if(wrap) wrap.style.display=has9?'':'none';
+      if(!has9) return 'all';
+      bar.innerHTML=[['all','Alla'],['7','7 mot 7'],['9','9 mot 9']]
+        .map(([v,l])=>'<button class="filter-btn'+(current===v?' active':'')+'" onclick="'+setter+'(\''+v+'\')">'+l+'</button>').join('');
+      return current;
+    }
+    const formatPasses=(m,f)=>f==='all'||String(matchFormat(m))===f;
+    window.setPublicFormatFilter = v => { pubFormatFilter = v; renderPublicMatches(); };
+    window.setStatsFormatFilter  = v => { statsFormatFilter = v; renderStats(); };
     window.setPublicSeasonFilter = y => { pubSeasonFilter = y; renderPublicMatches(); };
     window.setStatsSeasonFilter  = y => { statsSeasonFilter = y; renderStats(); };
     window.setAdminSeasonFilter  = y => { adminSeasonFilter = y; renderMatchList(); };
@@ -1458,6 +1547,8 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       let filtered=pubFilter==='all'?matches.slice():matches.filter(m=>effectiveMatchType(m)===pubFilter);
       if(pubLagFilter!=='all')filtered=filtered.filter(m=>matchPassesLagFilter(m,pubLagFilter));
       filtered=filtered.filter(m=>seasonPasses(m,pubSeasonFilter));
+      pubFormatFilter=renderFormatBar('pub-format-filter-bar',pubFormatFilter,'setPublicFormatFilter');
+      filtered=filtered.filter(m=>formatPasses(m,pubFormatFilter));
       const tbody=document.getElementById('pub-matches-tbody');
       const noEl=document.getElementById('pub-no-matches');
       document.getElementById('pub-match-count').textContent='('+filtered.length+')';
@@ -1480,7 +1571,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
                  (!isLive&&isNext?'<span class="next-match-label">NÄSTA</span> ':'')+dateStr+'</td>'+
           '<td style="font-weight:600;">'+lagBadgeHtml(lag)+esc(m.opponent)+'</td>'+
           '<td><span class="venue-badge '+(m.venue==='home'?'home':'away')+'">'+(m.venue==='home'?'H':'B')+'</span></td>'+
-          '<td><span class="type-badge">'+esc(effectiveMatchType(m))+'</span>'+tourBadgeHtml(m)+'</td>'+
+          '<td><span class="type-badge">'+esc(effectiveMatchType(m))+'</span>'+tourBadgeHtml(m)+formatBadgeHtml(m)+'</td>'+
           '<td class="result-cell'+((hasRes||isLive)?'':' no-res')+(isLastPlayed?' last-played-result':'')+'">'+
             (isLive?'<span class="live-now">'+lsc.f+'–'+lsc.a+'</span>':(hasRes?m.goalsFor+'–'+m.goalsAgainst:'?–?'))+'</td>'+
           '<td class="scorers-cell">'+(scorerStr||'–')+'</td>'+
@@ -1554,7 +1645,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
           '<div class="match-card-header">'
             +'<span class="venue-badge '+(m.venue==='home'?'home':'away')+'">'+(m.venue==='home'?'HEMMA':'BORTA')+'</span>'
             +(lag?'<span class="lag-badge '+(lag==='Gul'?'lag-gul':'lag-svart')+'" style="margin-left:4px;">'+lag+'</span>':'')
-            +'<span class="type-badge" style="margin-left:4px;">'+esc(effectiveMatchType(m))+'</span>'+tourBadgeHtml(m)
+            +'<span class="type-badge" style="margin-left:4px;">'+esc(effectiveMatchType(m))+'</span>'+tourBadgeHtml(m)+formatBadgeHtml(m)
             +'<div class="match-result-badge'+(hasRes?'':' no-res')+'">'+(hasRes?m.goalsFor+'–'+m.goalsAgainst:'?–?')+'</div>'
           +'</div>'
           +'<div class="match-opponent">'+esc(m.opponent)+'</div>'
@@ -1602,7 +1693,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         type:document.getElementById('f-type').value,goalsFor:gf!==''?+gf:null,goalsAgainst:gaTotal,
         periodsAgainst:anyPeriod?[p1,p2,p3]:null,
         notes:document.getElementById('f-notes').value.trim(),
-        turnering:document.getElementById('f-turnering').value.trim()||null,lag:lagPick||null,scorers:getScorers(),assists:getAssists(),lineup:null};
+        turnering:document.getElementById('f-turnering').value.trim()||null,lag:lagPick||null,format:+document.getElementById('f-format').value||7,scorers:getScorers(),assists:getAssists(),lineup:null};
       const btn=document.getElementById('btn-save-match');
       btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
       try{
@@ -1619,7 +1710,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       document.getElementById('f-goals-for').value='';
       document.getElementById('f-ga-p1').value='';document.getElementById('f-ga-p2').value='';document.getElementById('f-ga-p3').value='';
       document.getElementById('f-notes').value='';document.getElementById('f-lag').value='';
-      document.getElementById('f-turnering').value='';
+      document.getElementById('f-turnering').value='';document.getElementById('f-format').value=String(lastUsedFormat());
       document.getElementById('scorer-rows').innerHTML='';document.getElementById('assist-rows').innerHTML='';
     }
     window.cancelEdit=()=>{editingId=null;document.getElementById('form-title').textContent='Ny match';document.getElementById('btn-cancel-edit').style.display='none';clearForm();};
@@ -1635,6 +1726,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       document.getElementById('f-ga-p2').value=pa&&pa[1]!=null?pa[1]:'';
       document.getElementById('f-ga-p3').value=pa&&pa[2]!=null?pa[2]:'';
       document.getElementById('f-notes').value=m.notes||'';
+      document.getElementById('f-format').value=String(matchFormat(m));
       document.getElementById('f-turnering').value=resolveTurnering(m);
       const lagVal=m.lag==='Gul'||m.lag==='Svart'?m.lag:resolveMatchLag(m);
       document.getElementById('f-lag').value=(lagVal==='Gul'||lagVal==='Svart')?lagVal:'';
@@ -1769,7 +1861,12 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       }
     };
     window.importSeasonMatches=window.importMatchSchedule;
-    window.linkToLineup=id=>{if(!currentUser)return;activeLinkId=id;updateLinkButton();switchTab('lineup');};
+    window.linkToLineup=id=>{
+      if(!currentUser)return;activeLinkId=id;
+      const m=matches.find(x=>x.id===id);
+      if(m){const want=matchFormat(m); if(want!==formationSize(currentFormation)) setFormation(DEFAULT_FORMATION_BY_SIZE[want]);}
+      updateLinkButton();switchTab('lineup');
+    };
 
     // ── LINEUP MODAL ──────────────────────────────────────────────────────────
     window.showLineup=id=>{
@@ -1875,6 +1972,8 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       let ms=statsFilter==='all'?matches.slice():matches.filter(m=>effectiveMatchType(m)===statsFilter);
       if(statsLagFilter!=='all')ms=ms.filter(m=>matchPassesLagFilter(m,statsLagFilter));
       ms=ms.filter(m=>seasonPasses(m,statsSeasonFilter));
+      statsFormatFilter=renderFormatBar('stats-format-filter-bar',statsFormatFilter,'setStatsFormatFilter');
+      ms=ms.filter(m=>formatPasses(m,statsFormatFilter));
       renderStatsTurBar();
       renderTournamentCard(ms.slice());
       if(statsTurFilter!=='all')ms=ms.filter(m=>resolveTurnering(m)===statsTurFilter);
