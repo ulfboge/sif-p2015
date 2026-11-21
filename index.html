@@ -170,6 +170,24 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 .scorer-row input[type=number]{background:#252525;border:1.5px solid #383838;border-radius:5px;padding:5px 8px;color:var(--text-light);font-size:12px;width:50px;outline:none;text-align:center;}
 .btn-add-scorer{background:transparent;border:1.5px solid #383838;border-radius:5px;color:var(--text-muted);font-size:18px;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .btn-add-scorer:hover{border-color:var(--yellow);color:var(--yellow);}
+.roster-panel{background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:10px;padding:16px 20px;margin-top:16px;display:flex;flex-direction:column;gap:14px;}
+.roster-panel summary{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;}
+.roster-count{font-size:14px;color:var(--text-muted);font-weight:600;}
+.roster-note{font-size:12px;color:var(--text-muted);margin:8px 0;line-height:1.4;}
+.roster-head,.roster-row{display:grid;grid-template-columns:1fr 64px 52px 28px;gap:8px;align-items:center;}
+.roster-head{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin:6px 0 4px;}
+.roster-row{margin-bottom:6px;}
+.roster-row input[type=text],.roster-row input[type=number]{background:#252525;border:1.5px solid #383838;border-radius:5px;padding:6px 8px;color:var(--text-light);font-size:13px;width:100%;outline:none;}
+.roster-row input[type=text]:read-only{border-color:transparent;background:transparent;padding-left:0;}
+.roster-row input[type=checkbox]{width:18px;height:18px;accent-color:var(--yellow);justify-self:center;}
+.roster-row.inactive input[type=text]{color:var(--text-muted);text-decoration:line-through;}
+.roster-actions{display:flex;gap:8px;margin-top:10px;}
+.roster-actions .btn-action{width:auto;flex:1;}
+.roster-actions .btn-primary{flex:1;}
+.roster-add:hover{border-color:var(--yellow)!important;color:var(--yellow)!important;}
+.roster-status{font-size:12px;margin-top:8px;min-height:1em;color:var(--text-muted);}
+.roster-status.ok{color:var(--gk-green);}
+.roster-status.err{color:#ff6b68;}
 .btn-rem-scorer{background:transparent;border:none;color:#e53935;font-size:16px;cursor:pointer;padding:0 4px;flex-shrink:0;}
 .match-list-panel{background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:10px;padding:20px;max-height:80vh;overflow-y:auto;}
 .match-list-panel h2{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:16px;}
@@ -533,6 +551,24 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
           <div id="admin-match-list"><div class="no-matches"><span class="spinner"></span></div></div>
         </div>
       </div>
+      <!-- TRUPP + BACKUP (admin) -->
+      <div class="roster-panel">
+        <details id="roster-details">
+          <summary>👥 Trupp <span id="roster-count" class="roster-count"></span></summary>
+          <p class="roster-note">Avmarkera <b>Aktiv</b> för spelare som slutat – statistiken från tidigare matcher finns kvar. Namn går inte att ändra i efterhand eftersom statistiken kopplas till namnet.</p>
+          <div class="roster-head"><span>Namn</span><span>Nr</span><span>Aktiv</span><span></span></div>
+          <div id="roster-rows"></div>
+          <div class="roster-actions">
+            <button class="btn-action roster-add" type="button" onclick="addRosterRow()">+ Lägg till spelare</button>
+            <button class="btn-primary" type="button" id="btn-save-roster" onclick="saveRoster()">💾 Spara trupp</button>
+          </div>
+          <div id="roster-status" class="roster-status"></div>
+        </details>
+        <div class="roster-backup">
+          <button class="btn-action roster-add" type="button" id="btn-backup" onclick="downloadBackup()">⬇️ Ladda ner backup (JSON)</button>
+          <p class="roster-note" style="margin-top:6px;">Alla matcher och truppen i en fil. Bra att ta innan säsongsbytet.</p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -643,7 +679,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-    import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, orderBy, query, onSnapshot }
+    import { getFirestore, collection, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc, doc, orderBy, query, onSnapshot }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
     const firebaseConfig = window.__FIREBASE_CONFIG__;
@@ -657,7 +693,8 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     }
 
     // ── DATA ──────────────────────────────────────────────────────────────────
-    const PLAYERS = [
+    // Standardtrupp – används om ingen trupp är sparad i Firestore (config/roster)
+    const DEFAULT_PLAYERS = [
       {name:"Albert",num:11},{name:"Alexander F",num:10},{name:"Alexander v.U",num:12},
       {name:"Arvid",num:13},{name:"Aston",num:14},{name:"Ataberk",num:8},{name:"Axel J",num:17},
       {name:"Axel L",num:19},{name:"Davyd",num:49},{name:"Edward",num:9},{name:"Ellie",num:23},
@@ -671,12 +708,29 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       {name:"Johan", role:"Lagledare"}
     ];
     const DEFAULT_MATCH_STAFF = ["Johan", "Romeo"];
+    // ROSTER = hela truppen inkl. inaktiva (behövs för nummer i gamla laguppställningar).
+    // PLAYERS = aktiva spelare – det som visas i laguppställning, formulär och matchkontroll.
+    let ROSTER  = DEFAULT_PLAYERS.map(p => ({...p, active:true}));
+    let PLAYERS = ROSTER.slice();
     const numMap = {};
-    PLAYERS.forEach(p => numMap[p.name] = p.num);
+    function applyRoster(list){
+      ROSTER = list.map(p => ({name:String(p.name||'').trim(), num:(p.num===''||p.num==null)?null:Number(p.num), active:p.active!==false}))
+                   .filter(p => p.name);
+      PLAYERS = ROSTER.filter(p => p.active);
+      Object.keys(numMap).forEach(k => delete numMap[k]);
+      ROSTER.forEach(p => numMap[p.name] = p.num);
+    }
+    applyRoster(ROSTER);
     const OWN_GOAL_SCORER = 'Självmål';
     const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    // Aktiva spelare + ev. redan vald spelare som inte längre är aktiv (så gamla matcher inte tappar namn)
+    function playerOptionsHtml(selected=''){
+      const names=PLAYERS.map(p=>p.name);
+      if(selected && selected!==OWN_GOAL_SCORER && !names.includes(selected)) names.push(selected);
+      return names.map(n=>'<option value="'+esc(n)+'"'+(n===selected?' selected':'')+'>'+esc(n)+'</option>').join('');
+    }
     function scorerSelectOptions(selected=''){
-      const playerOpts=PLAYERS.map(p=>'<option value="'+p.name+'"'+(p.name===selected?' selected':'')+'>'+p.name+'</option>').join('');
+      const playerOpts=playerOptionsHtml(selected);
       const ownGoalOpt='<option value="'+OWN_GOAL_SCORER+'"'+(selected===OWN_GOAL_SCORER?' selected':'')+'>'+OWN_GOAL_SCORER+' (motståndare)</option>';
       return playerOpts+ownGoalOpt;
     }
@@ -884,7 +938,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         const c = document.createElement('div');
         c.className = 'player-chip'+(dragEnabled?' draggable':'');
         c.dataset.player = p.name; c.dataset.source = 'list'; c.dataset.stype = 'player';
-        c.innerHTML = '<span class="chip-name">'+p.name+'</span><span class="chip-num">'+p.num+'</span>';
+        c.innerHTML = '<span class="chip-name">'+p.name+'</span><span class="chip-num">'+(p.num!=null?p.num:'?')+'</span>';
         if (dragEnabled) { c.draggable=true; addDragSource(c); }
         list.appendChild(c);
       });
@@ -1186,6 +1240,123 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       renderMatchList(); renderPublicMatches(); renderStats(); renderLiveBanner();
     }
 
+    // ── TRUPP (Firestore: config/roster) ──────────────────────────────────────
+    let rosterLoaded = false;
+    async function loadRoster(){
+      if(!db) return;
+      try{
+        const snap = await getDoc(doc(db,'config','roster'));
+        const data = snap.exists() ? snap.data() : null;
+        if(data && Array.isArray(data.players) && data.players.length){
+          applyRoster(data.players);
+          rosterLoaded = true;
+        }
+      }catch(e){ console.warn('Trupp kunde inte läsas – använder standardtrupp:', e); }
+      render(); renderRosterEditor();
+      if(typeof renderLive === 'function') renderLive();
+    }
+
+    function renderRosterEditor(){
+      const wrap = document.getElementById('roster-rows'); if(!wrap) return;
+      const sorted = ROSTER.slice().sort((a,b)=>(b.active-a.active)||a.name.localeCompare(b.name,'sv'));
+      wrap.innerHTML = '';
+      sorted.forEach(p => wrap.appendChild(rosterRowEl(p, false)));
+      updateRosterCount();
+    }
+    function rosterRowEl(p, isNew){
+      const row = document.createElement('div');
+      row.className = 'roster-row' + (p.active ? '' : ' inactive');
+      row.dataset.new = isNew ? '1' : '';
+      row.innerHTML =
+          '<input type="text" class="r-name" value="'+esc(p.name)+'"'+(isNew?' placeholder="Namn"':' readonly')+'>'
+        + '<input type="number" class="r-num" min="0" max="99" value="'+(p.num!=null?p.num:'')+'" placeholder="–">'
+        + '<input type="checkbox" class="r-active"'+(p.active?' checked':'')+'>'
+        + (isNew ? '<button class="btn-rem-scorer" type="button" title="Ta bort raden">✕</button>' : '<span></span>');
+      row.querySelector('.r-active').addEventListener('change', e => { row.classList.toggle('inactive', !e.target.checked); updateRosterCount(); });
+      const rm = row.querySelector('.btn-rem-scorer');
+      if(rm) rm.addEventListener('click', () => { row.remove(); updateRosterCount(); });
+      return row;
+    }
+    function updateRosterCount(){
+      const el = document.getElementById('roster-count'); if(!el) return;
+      const rows = [...document.querySelectorAll('#roster-rows .roster-row')];
+      const active = rows.filter(r => r.querySelector('.r-active').checked).length;
+      el.textContent = '(' + active + ' aktiva' + (rows.length > active ? ', ' + (rows.length-active) + ' inaktiva' : '') + ')';
+    }
+    function setRosterStatus(msg, cls){
+      const el = document.getElementById('roster-status'); if(!el) return;
+      el.textContent = msg; el.className = 'roster-status' + (cls ? ' ' + cls : '');
+    }
+    window.addRosterRow = () => {
+      const wrap = document.getElementById('roster-rows');
+      const row = rosterRowEl({name:'', num:null, active:true}, true);
+      wrap.insertBefore(row, wrap.firstChild);
+      row.querySelector('.r-name').focus();
+      updateRosterCount();
+    };
+    window.saveRoster = async () => {
+      if(!db || !currentUser){ setRosterStatus('Du måste vara inloggad för att spara.', 'err'); return; }
+      const rows = [...document.querySelectorAll('#roster-rows .roster-row')];
+      const list = [];
+      for(const r of rows){
+        const name = r.querySelector('.r-name').value.trim();
+        const numRaw = r.querySelector('.r-num').value.trim();
+        const active = r.querySelector('.r-active').checked;
+        if(!name){ if(r.dataset.new) continue; }
+        if(name === OWN_GOAL_SCORER){ setRosterStatus('"'+OWN_GOAL_SCORER+'" är reserverat och kan inte användas som namn.', 'err'); return; }
+        const num = numRaw === '' ? null : parseInt(numRaw, 10);
+        if(num != null && (isNaN(num) || num < 0 || num > 99)){ setRosterStatus('Ogiltigt nummer för ' + name + '.', 'err'); return; }
+        list.push({name, num, active});
+      }
+      const lower = list.map(p => p.name.toLowerCase());
+      const dupName = list.find((p,i) => lower.indexOf(p.name.toLowerCase()) !== i);
+      if(dupName){ setRosterStatus('Namnet "' + dupName.name + '" finns redan. Lägg till t.ex. en initial.', 'err'); return; }
+      const activeNums = list.filter(p => p.active && p.num != null).map(p => p.num);
+      const dupNum = activeNums.find((n,i) => activeNums.indexOf(n) !== i);
+      if(dupNum != null && !confirm('Nummer ' + dupNum + ' används av flera aktiva spelare. Spara ändå?')) return;
+      const btn = document.getElementById('btn-save-roster');
+      btn.disabled = true; setRosterStatus('Sparar…');
+      try{
+        await setDoc(doc(db,'config','roster'), {players: list, updatedAt: new Date().toISOString(), updatedBy: currentUser.email || null});
+        applyRoster(list); rosterLoaded = true;
+        render(); renderRosterEditor();
+        if(typeof renderLive === 'function') renderLive();
+        setRosterStatus('✅ Truppen sparad (' + PLAYERS.length + ' aktiva).', 'ok');
+      }catch(e){
+        setRosterStatus('Kunde inte spara: ' + e.message + ' – kontrollera Firestore-reglerna för config/roster.', 'err');
+      }finally{ btn.disabled = false; }
+    };
+
+    // ── BACKUP ────────────────────────────────────────────────────────────────
+    window.downloadBackup = async () => {
+      const btn = document.getElementById('btn-backup');
+      btn.disabled = true;
+      try{
+        let fresh = matches;
+        if(db){
+          try{ const snap = await getDocs(collection(db,'matches')); fresh = snap.docs.map(d => ({id:d.id, ...d.data()})); }
+          catch(e){ console.warn('Backup: använder redan inlästa matcher', e); }
+        }
+        fresh = fresh.slice().sort(compareMatches);
+        const payload = {
+          app: 'sif-p2015',
+          exportedAt: new Date().toISOString(),
+          exportedBy: currentUser ? currentUser.email : null,
+          roster: ROSTER,
+          rosterSource: rosterLoaded ? 'firestore' : 'standard',
+          matchCount: fresh.length,
+          matches: fresh
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'sif-p2015-backup-' + new Date().toISOString().slice(0,10) + '.json';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+      }catch(e){ alert('Backup misslyckades: ' + e.message); }
+      finally{ btn.disabled = false; }
+    };
+
     function effectiveMatchType(m){
       return m.type==='Serie'?'Träningsmatch':(m.type||'Träningsmatch');
     }
@@ -1407,7 +1578,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     };
     window.addAssistRow=(name='',assists=1)=>{
       const row=document.createElement('div'); row.className='scorer-row';
-      const opts=PLAYERS.map(p=>'<option value="'+p.name+'"'+(p.name===name?' selected':'')+'>'+p.name+'</option>').join('');
+      const opts=playerOptionsHtml(name);
       row.innerHTML='<select>'+opts+'</select><input type="number" value="'+assists+'" min="1" max="20"><button class="btn-rem-scorer" onclick="this.parentElement.remove()">✕</button>';
       document.getElementById('assist-rows').appendChild(row);
     };
@@ -1849,7 +2020,8 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
     initListDropTargets();
     initTapSelect();
     render();
-    if (db) loadMatches();
+    renderRosterEditor();
+    if (db) { loadMatches(); loadRoster(); }
     document.getElementById('f-date').valueAsDate=new Date();
     // ══ LIVE MATCHKONTROLL ═════════════════════════════════════════════════
     // Live-state sparas på matchdokumentet i fältet `live`:
