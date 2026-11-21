@@ -1530,7 +1530,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         +'</div>';
       h+='<div class="ss-section"><h3>Resultat</h3>'
         +'<div class="ss-wdl"><div style="width:'+pct(W)+';background:var(--gk-green)"></div><div style="width:'+pct(D)+';background:#888"></div><div style="width:'+pct(L)+';background:#da5f5f"></div></div>'
-        +'<div class="ss-wdl-legend">'+W+' vinster · '+D+' oavgjorda · '+L+' förluster · målskillnad '+GF+'–'+GA+'</div>'
+        +'<div class="ss-wdl-legend">'+W+(W===1?' vinst':' vinster')+' · '+D+(D===1?' oavgjord':' oavgjorda')+' · '+L+(L===1?' förlust':' förluster')+' · målskillnad '+GF+'–'+GA+'</div>'
         +'<div class="ss-line" style="margin-top:6px"><span class="ic">📋</span><div>'+Object.entries(types).map(([t,n])=>n+' '+esc(t.toLowerCase()==='träningsmatch'?(n===1?'träningsmatch':'träningsmatcher'):t)).join(' · ')+(nine?'<div class="sm">varav '+nine+' i 9 mot 9</div>':'')+'</div></div>'
         +'</div>';
       h+='<div class="ss-section"><h3>Hela laget</h3>'
