@@ -6,11 +6,18 @@ Laguppställning och matchhistorik för Stocksunds IF pojkar födda 2015.
 
 ## Funktioner
 
-- Schematisk 7-mot-7-plan med drag och släpp
-- Spelare placeras som back, defensiv mittfältare, mittfältare eller forward
-- Avbytarbänk med 5 platser
-- Matchhistorik med resultat, målgörare och sparade laguppställningar
-- Inloggning krävs för att redigera – alla kan se
+- Schematisk plan med drag och släpp (eller tryck-och-placera i mobilen)
+  - **7 mot 7:** formationerna 2-3-1 och 1-4-1, 5 avbytare
+  - **9 mot 9:** formationerna 3-3-2, 3-2-3 och 2-4-2, 7 avbytare
+- Matchhistorik med resultat, målgörare, assist, insläppta mål per period och sparade laguppställningar
+- **Matchdag:** nästa match visas överst med nedräkning till avspark (fyll i "Avspark" på matchen)
+- **Matchkontroll:** liveresultat med klocka som syns för alla på sidan
+- Statistik per säsong, spelform, antal spelare (7/9), lag och turnering
+- **Säsongssammanfattning** med lagfokus och delbar länk (`#sasong-ÅÅÅÅ`)
+- "Tack för säsongen" visas överst efter säsongens sista match, fram till nästa säsongs första matchdag
+- **Trupp** redigeras i admin-vyn (Firestore `config/roster`). Spelare som slutar markeras som inaktiva och statistiken ligger kvar
+- **Backup:** ladda ner alla matcher och truppen som JSON från admin-vyn
+- Inloggning krävs för att redigera, men alla kan se
 
 ## Teknik
 
@@ -33,6 +40,15 @@ Deploy sker via GitHub Actions i `.github/workflows/deploy-pages.yml`.
 3. Pusha till `main` (eller kör workflow manuellt)
 
 Workflow skapar `firebase-config.js` vid deploy och publicerar sidan utan att nyckeln lagras i git-historiken.
+
+## Firestore-regler
+
+Samlingarna `matches` och `config` ska vara läsbara för alla och skrivbara för inloggade:
+
+```
+match /matches/{matchId} { allow read: if true; allow write: if request.auth != null; }
+match /config/{docId}    { allow read: if true; allow write: if request.auth != null; }
+```
 
 ## Säkerhet
 

@@ -330,6 +330,52 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 .live-empty{color:var(--text-muted);font-size:13px;text-align:center;padding:14px 0;}
 /* Publik live-banner */
 #public-live-banner{margin-bottom:18px;}
+/* Matchdag */
+#matchday-hero{margin-bottom:18px;}
+#matchday-hero:empty{display:none;}
+.md-card{background:linear-gradient(180deg,#1d1b12,#151515);border:1px solid rgba(245,216,0,.25);border-radius:12px;padding:16px;max-width:560px;}
+.md-card.today{border-color:var(--yellow);box-shadow:0 0 0 1px rgba(245,216,0,.25),0 6px 24px rgba(245,216,0,.08);}
+.md-card + .md-card{margin-top:12px;}
+.md-tag{display:inline-block;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:5px;background:rgba(245,216,0,.12);color:var(--yellow);border:1px solid rgba(245,216,0,.4);}
+.md-card.today .md-tag{background:var(--yellow);color:var(--black);}
+.md-teams{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:24px;line-height:1.15;margin-top:8px;}
+.md-teams .us{color:var(--yellow);}
+.md-teams .vs{color:var(--text-muted);font-size:16px;margin:0 6px;}
+.md-meta{font-size:13px;color:var(--text-muted);margin-top:6px;line-height:1.5;}
+.md-countdown{display:flex;gap:8px;margin-top:12px;}
+.md-cd-box{flex:1;max-width:84px;background:#1f1f1f;border:1px solid #333;border-radius:8px;padding:8px 4px;text-align:center;}
+.md-cd-num{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;line-height:1;}
+.md-cd-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-top:3px;}
+.md-status{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;color:var(--yellow);margin-top:12px;}
+.md-live-note{font-size:12px;color:var(--text-muted);margin-top:12px;display:flex;align-items:center;gap:6px;}
+/* Tack för säsongen */
+#season-thanks:empty{display:none;}
+.thanks-card{background:linear-gradient(135deg,rgba(245,216,0,.16),rgba(245,216,0,.03) 60%),#141414;border:1px solid rgba(245,216,0,.45);border-radius:14px;padding:18px;max-width:560px;margin-bottom:18px;}
+.thanks-card h2{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:26px;line-height:1.1;}
+.thanks-card h2 .y{color:var(--yellow);}
+.thanks-card p{font-size:14px;line-height:1.5;margin-top:8px;color:var(--text-light);}
+.thanks-card .facts{font-size:13px;color:var(--text-muted);margin-top:8px;}
+.thanks-card .season-summary-btn{margin-top:12px;font-size:14px;padding:9px 14px;}
+/* Säsongssammanfattning */
+.season-summary-btn{align-self:flex-start;background:linear-gradient(90deg,rgba(245,216,0,.14),rgba(245,216,0,.04));border:1.5px solid rgba(245,216,0,.5);color:var(--yellow);border-radius:10px;padding:12px 18px;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:16px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;}
+.season-summary-btn:hover{background:rgba(245,216,0,.2);}
+.season-summary-btn:empty{display:none;}
+#season-summary-view{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;overflow-y:auto;padding:20px;}
+.ss-sub{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.ss-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.ss-num{background:#1f1f1f;border:1px solid #2c2c2c;border-radius:10px;padding:12px 6px;text-align:center;}
+.ss-num b{display:block;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:30px;line-height:1;color:var(--yellow);}
+.ss-num span{display:block;font-size:11px;color:var(--text-muted);margin-top:4px;}
+.ss-section{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:14px;margin-bottom:12px;}
+.ss-section h3{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;}
+.ss-line{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.4;padding:5px 0;}
+.ss-line .ic{width:22px;flex-shrink:0;text-align:center;}
+.ss-line .sm{color:var(--text-muted);font-size:12px;}
+.ss-wdl{display:flex;height:12px;border-radius:6px;overflow:hidden;margin:6px 0 4px;background:#222;}
+.ss-wdl div{height:100%;}
+.ss-wdl-legend{font-size:12px;color:var(--text-muted);}
+.ss-actions{display:flex;gap:8px;margin-top:6px;}
+@media(max-width:480px){.ss-num b{font-size:24px;}.md-teams{font-size:21px;}#season-summary-view{padding:10px;}}
 .pub-live-card{background:linear-gradient(180deg,#1f1a1a,#151515);border:1px solid rgba(229,57,53,.35);border-radius:12px;padding:14px;max-width:560px;}
 .pub-live-card + .pub-live-card{margin-top:12px;}
 .pub-live-events{margin-top:12px;padding-top:10px;border-top:1px solid #2b2b2b;display:flex;flex-direction:column;gap:5px;font-size:13px;}
@@ -463,7 +509,9 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
 
   <!-- TAB: MATCHES -->
   <div class="tab-content" id="tab-matches">
+    <div id="season-thanks"></div>
     <div id="public-live-banner"></div>
+    <div id="matchday-hero"></div>
     <!-- PUBLIC VIEW -->
     <div id="public-matches-view">
       <div class="public-matches-wrap">
@@ -514,6 +562,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
           <div class="form-row">
             <div class="form-group"><label>Motståndare</label><input type="text" id="f-opponent" placeholder="t.ex. Djurgårdens IF"></div>
             <div class="form-group" style="max-width:120px;"><label>Datum</label><input type="date" id="f-date"></div>
+            <div class="form-group" style="max-width:90px;"><label>Avspark</label><input type="time" id="f-tid"></div>
           </div>
           <div class="form-row">
             <div class="form-group"><label>Hemma / Borta</label><select id="f-venue"><option value="home">Hemma</option><option value="away">Borta</option></select></div>
@@ -613,15 +662,31 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         </div>
       </div>
       <div class="summary-numbers" id="stats-summary"></div>
+      <button class="season-summary-btn" id="btn-season-summary" type="button" onclick="openSeasonSummary()"></button>
       <div class="stats-grid">
         <div class="stat-card"><h3>Skytteliga</h3><div id="stats-scorers"></div></div>
         <div class="stat-card"><h3>Assistliga</h3><div id="stats-assists"></div></div>
         <div class="stat-card"><h3>Formkurva (senaste 10)</h3><div id="stats-form"></div></div>
-        <div class="stat-card"><h3>Hållna halvlekar</h3><div id="stats-cleanhalves"></div></div>
+        <div class="stat-card"><h3>Hållna perioder</h3><div id="stats-cleanhalves"></div></div>
         <div class="stat-card"><h3>Turneringar</h3><div id="stats-tournaments"></div></div>
         <div class="stat-card"><h3>Inbördes möten</h3><div id="stats-h2h"></div></div>
         <div class="stat-card"><h3>Hemma vs Borta</h3><div id="stats-venue"></div></div>
       </div>
+    </div>
+  </div>
+
+  <!-- SÄSONGSSAMMANFATTNING -->
+  <div id="season-summary-view">
+    <div class="lineup-modal season-modal">
+      <div class="lineup-modal-header">
+        <div><h2 id="ss-title">Säsongen</h2><div class="ss-sub">Stocksunds IF P2015</div></div>
+        <button class="btn-close-modal" onclick="closeSeasonSummary()">✕</button>
+      </div>
+      <div id="ss-body"></div>
+      <div class="ss-actions">
+        <button class="btn-primary" type="button" onclick="shareSeasonSummary()">🔗 Dela länk</button>
+      </div>
+      <div id="ss-share-status" class="roster-status"></div>
     </div>
   </div>
 
@@ -1306,6 +1371,223 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       try{ await backfillLegacyMatchStaff(); }catch(e3){ console.warn('Staff backfill skipped:', e3); }
       try{ await backfillSerieMatches(); }catch(e4){ console.warn('Serie backfill skipped:', e4); }
       renderMatchList(); renderPublicMatches(); renderStats(); renderLiveBanner();
+      maybeOpenPendingSummary();
+    }
+
+
+    // ══ MATCHDAG ══════════════════════════════════════════════════════════════
+    // Visar nästa match (eller alla dagens matcher) med nedräkning till avspark.
+    // När matchen startas i Matchkontroll tar live-bannern över.
+    function todayISO(){
+      const d=new Date();
+      return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    }
+    function kickoffDate(m){
+      if(!m||!m.date) return null;
+      const [y,mo,d]=m.date.split('-').map(Number);
+      const ko=matchKickoffMinutes(m);
+      return new Date(y,mo-1,d, ko!=null?Math.floor(ko/60):0, ko!=null?ko%60:0);
+    }
+    const isPlayedMatch = m => m.goalsFor!=null && m.goalsAgainst!=null;
+    function upcomingMatches(){
+      const t=todayISO();
+      const now=Date.now();
+      return matches.filter(m=>m.date && m.date>=t && !isPlayedMatch(m) && !isLivePublic(m)
+        && !(liveOf(m) && liveOf(m).status==='finished')
+        // Släpp matcher där avsparken var för mer än 3 timmar sedan men som aldrig startades live
+        && !(m.date===t && matchKickoffMinutes(m)!=null && now-kickoffDate(m).getTime()>3*3600000)).sort(compareMatches);
+    }
+    function fmtKickoff(m){
+      const ko=matchKickoffMinutes(m);
+      return ko==null?'':String(Math.floor(ko/60)).padStart(2,'0')+':'+String(ko%60).padStart(2,'0');
+    }
+    function countdownHtml(ms){
+      const t=Math.max(0,Math.floor(ms/1000));
+      const d=Math.floor(t/86400), h=Math.floor(t%86400/3600), mi=Math.floor(t%3600/60), se=t%60;
+      const box=(n,l)=>'<div class="md-cd-box"><div class="md-cd-num">'+n+'</div><div class="md-cd-lbl">'+l+'</div></div>';
+      return (d>0?box(d,d===1?'dag':'dagar'):'')+box(String(h).padStart(2,'0'),'tim')+box(String(mi).padStart(2,'0'),'min')+(d===0?box(String(se).padStart(2,'0'),'sek'):'');
+    }
+    function matchdayCardHtml(m, isToday){
+      const lag=resolveMatchLag(m), tur=resolveTurnering(m), kickTxt=fmtKickoff(m);
+      const ko=kickoffDate(m), hasTime=matchKickoffMinutes(m)!=null;
+      const dateTxt=ko?ko.toLocaleDateString('sv-SE',{weekday:'long',day:'numeric',month:'long'})+(ko.getFullYear()!==new Date().getFullYear()?' '+ko.getFullYear():''):'';
+      const us='<span class="us">Stocksunds IF'+(lag?' '+esc(lag):'')+'</span>';
+      const opp='<span>'+esc(m.opponent||'Motståndare')+'</span>';
+      const teams=m.venue==='away'?opp+'<span class="vs">–</span>'+us:us+'<span class="vs">–</span>'+opp;
+      const meta=[
+        '📅 '+dateTxt.charAt(0).toUpperCase()+dateTxt.slice(1)+(kickTxt?' · ⏰ '+kickTxt:''),
+        [(m.venue==='away'?'Borta':'Hemma'), esc(effectiveMatchType(m)), esc(tur), matchFormat(m)===9?'9 mot 9':''].filter(Boolean).join(' · '),
+        m.notes?'📍 '+esc(m.notes):''
+      ].filter(Boolean).join('<br>');
+      let clock='';
+      if(hasTime){
+        const ms=ko-Date.now();
+        clock = ms>0
+          ? '<div class="md-countdown" data-countdown="'+ko.getTime()+'">'+countdownHtml(ms)+'</div>'
+          : '<div class="md-status">⚽ Dags för avspark!</div>';
+      }
+      return '<div class="md-card'+(isToday?' today':'')+'">'
+        + '<span class="md-tag">'+(isToday?'⚽ Matchdag idag':'Nästa match')+'</span>'
+        + '<div class="md-teams">'+teams+'</div>'
+        + '<div class="md-meta">'+meta+'</div>'
+        + clock
+        + '<div class="md-live-note"><span class="live-dot"></span>Resultatet uppdateras live här under matchen</div>'
+        + '</div>';
+    }
+    function renderMatchdayHero(){
+      const el=document.getElementById('matchday-hero'); if(!el) return;
+      const up=upcomingMatches();
+      if(!up.length){ el.innerHTML=''; return; }
+      const isToday=up[0].date===todayISO();
+      // Matchdag: visa alla dagens matcher (Gul och Svart kan spela samma dag). Annars bara nästa.
+      const show=isToday?up.filter(m=>m.date===up[0].date).slice(0,4):[up[0]];
+      el.innerHTML=show.map(m=>matchdayCardHtml(m,isToday)).join('');
+    }
+    function tickCountdowns(){
+      let passed=false;
+      document.querySelectorAll('[data-countdown]').forEach(el=>{
+        const ms=+el.dataset.countdown-Date.now();
+        if(ms<=0) passed=true; else el.innerHTML=countdownHtml(ms);
+      });
+      if(passed) renderMatchdayHero();
+    }
+    setInterval(tickCountdowns,1000);
+    // Byt dag vid midnatt / när fliken varit i bakgrunden
+    document.addEventListener('visibilitychange',()=>{ if(!document.hidden) renderMatchdayHero(); });
+
+    // ══ TACK FÖR SÄSONGEN ═════════════════════════════════════════════════════
+    // Visas överst när säsongens sista match är spelad och ligger kvar tills
+    // nästa säsongs första matchdag (då tar matchdagskortet över).
+    function renderSeasonThanks(){
+      const el=document.getElementById('season-thanks'); if(!el) return;
+      const t=todayISO();
+      const played=matches.filter(m=>m.date && isPlayedMatch(m));
+      if(!played.length){ el.innerHTML=''; return; }
+      const Y=played.map(matchSeason).sort().pop();                      // senaste säsongen med spelade matcher
+      const seasonOngoing=matches.some(m=>matchSeason(m)===Y && m.date>=t && !isPlayedMatch(m));
+      const nextStarted=matches.some(m=>m.date && matchSeason(m)>Y && m.date<=t);
+      const live=matches.some(m=>isLivePublic(m));
+      if(seasonOngoing || nextStarted || live){ el.innerHTML=''; return; }
+      const ps=played.filter(m=>matchSeason(m)===Y);
+      const gf=ps.reduce((s,m)=>s+m.goalsFor,0);
+      const next=String(+Y+1);
+      el.innerHTML='<div class="thanks-card">'
+        +'<h2>💛🖤 Tack för säsongen <span class="y">'+Y+'</span>!</h2>'
+        +'<p>Tack alla spelare, föräldrar och ledare för en rolig säsong. Vi ses '+next+'!</p>'
+        +'<div class="facts">'+ps.length+' matcher · '+gf+' mål framåt</div>'
+        +'<button class="season-summary-btn" type="button" onclick="switchTab(\'stats\');openSeasonSummary(\''+Y+'\')">🏆 Se säsongssammanfattningen</button>'
+        +'</div>';
+    }
+
+    // ══ SÄSONGSSAMMANFATTNING ═════════════════════════════════════════════════
+    // Lagfokus: siffror för hela laget, inga individuella topplistor.
+    let pendingSummaryYear=null;
+    function summaryYear(){
+      if(statsSeasonFilter && statsSeasonFilter!=='all') return statsSeasonFilter;
+      const ss=allSeasons(); return ss.includes(currentSeason())?currentSeason():(ss[0]||currentSeason());
+    }
+    function renderSeasonSummaryButton(){
+      const btn=document.getElementById('btn-season-summary'); if(!btn) return;
+      const y=summaryYear();
+      const n=matches.filter(m=>matchSeason(m)===y && isPlayedMatch(m)).length;
+      btn.textContent=n?'🏆 Säsongen '+y+' – sammanfattning':'';
+    }
+    function buildSeasonSummary(y){
+      const all=matches.filter(m=>matchSeason(m)===y).sort(compareMatches);
+      const ps=all.filter(isPlayedMatch);
+      if(!ps.length) return '<p style="color:var(--text-muted)">Inga spelade matcher '+esc(y)+'.</p>';
+      const W=ps.filter(m=>m.goalsFor>m.goalsAgainst).length, D=ps.filter(m=>m.goalsFor===m.goalsAgainst).length, L=ps.length-W-D;
+      const GF=ps.reduce((s,m)=>s+m.goalsFor,0), GA=ps.reduce((s,m)=>s+m.goalsAgainst,0);
+      let cleanP=0, totP=0;
+      ps.forEach(m=>{ if(Array.isArray(m.periodsAgainst)) m.periodsAgainst.forEach(g=>{ if(g!=null){ totP++; if(g===0) cleanP++; } }); });
+      const scorers=new Set(), assisters=new Set(), used=new Set();
+      ps.forEach(m=>{
+        (m.scorers||[]).forEach(x=>{ if(x.name && x.name!==OWN_GOAL_SCORER) scorers.add(x.name); });
+        (m.assists||[]).forEach(x=>{ if(x.name) assisters.add(x.name); });
+      });
+      all.forEach(m=>{ if(m.lineup){ Object.values(m.lineup.pitch||{}).forEach(a=>(a||[]).forEach(n=>n&&used.add(n))); (m.lineup.bench||[]).forEach(n=>n&&used.add(n)); } });
+      // Höjdpunkter
+      const byDiff=ps.slice().sort((a,b)=>(b.goalsFor-b.goalsAgainst)-(a.goalsFor-a.goalsAgainst)||b.goalsFor-a.goalsFor);
+      const best=byDiff[0];
+      const mostGoals=ps.slice().sort((a,b)=>b.goalsFor-a.goalsFor)[0];
+      let run=0, bestRun=0; ps.forEach(m=>{ if(m.goalsFor>=m.goalsAgainst){ run++; bestRun=Math.max(bestRun,run); } else run=0; });
+      let comebacks=0; // vann/kryssade trots insläppt mål i P1
+      ps.forEach(m=>{ const pa=m.periodsAgainst; if(Array.isArray(pa)&&pa[0]>0&&m.goalsFor>=m.goalsAgainst) comebacks++; });
+      const shortDate=m=>{ const d=kickoffDate(m); return d?d.toLocaleDateString('sv-SE',{day:'numeric',month:'short'}):''; };
+      const line=(ic,txt,sm)=>'<div class="ss-line"><span class="ic">'+ic+'</span><div>'+txt+(sm?'<div class="sm">'+sm+'</div>':'')+'</div></div>';
+      // Turneringar
+      const tours={};
+      ps.forEach(m=>{ const t=resolveTurnering(m); if(!t) return; const r=tours[t]=tours[t]||{n:0,w:0,d:0,l:0,gf:0,ga:0};
+        r.n++; r.gf+=m.goalsFor; r.ga+=m.goalsAgainst; if(m.goalsFor>m.goalsAgainst) r.w++; else if(m.goalsFor===m.goalsAgainst) r.d++; else r.l++; });
+      const types={}; ps.forEach(m=>{ const t=effectiveMatchType(m); types[t]=(types[t]||0)+1; });
+      const nine=ps.filter(m=>matchFormat(m)===9).length;
+      const pct=n=>(n/ps.length*100).toFixed(1)+'%';
+      let h='';
+      h+='<div class="ss-grid">'
+        +'<div class="ss-num"><b>'+ps.length+'</b><span>matcher</span></div>'
+        +'<div class="ss-num"><b>'+GF+'</b><span>mål framåt</span></div>'
+        +'<div class="ss-num"><b>'+(totP?cleanP:'–')+'</b><span>hållna perioder</span></div>'
+        +'</div>';
+      h+='<div class="ss-section"><h3>Resultat</h3>'
+        +'<div class="ss-wdl"><div style="width:'+pct(W)+';background:var(--gk-green)"></div><div style="width:'+pct(D)+';background:#888"></div><div style="width:'+pct(L)+';background:#da5f5f"></div></div>'
+        +'<div class="ss-wdl-legend">'+W+' vinster · '+D+' oavgjorda · '+L+' förluster · målskillnad '+GF+'–'+GA+'</div>'
+        +'<div class="ss-line" style="margin-top:6px"><span class="ic">📋</span><div>'+Object.entries(types).map(([t,n])=>n+' '+esc(t.toLowerCase()==='träningsmatch'?(n===1?'träningsmatch':'träningsmatcher'):t)).join(' · ')+(nine?'<div class="sm">varav '+nine+' i 9 mot 9</div>':'')+'</div></div>'
+        +'</div>';
+      h+='<div class="ss-section"><h3>Hela laget</h3>'
+        +line('⚽', '<b>'+scorers.size+'</b> '+(scorers.size===1?'spelare':'olika spelare')+' har gjort mål')
+        +(assisters.size?line('🅰️', '<b>'+assisters.size+'</b> '+(assisters.size===1?'spelare':'olika spelare')+' har slagit en målgivande passning'):'')
+        +(used.size?line('👕', '<b>'+used.size+'</b> spelare har varit med i laguppställningarna'):'')
+        +(totP?line('🧤', '<b>'+cleanP+'</b> av '+totP+' perioder utan insläppt mål'):'')
+        +line('📈', (GF/ps.length).toFixed(1).replace('.',',')+' gjorda mål per match i snitt')
+        +'</div>';
+      h+='<div class="ss-section"><h3>Höjdpunkter</h3>'
+        +(best && best.goalsFor>best.goalsAgainst?line('🏆','Största vinsten: <b>'+best.goalsFor+'–'+best.goalsAgainst+'</b> mot '+esc(best.opponent), shortDate(best)):'')
+        +(mostGoals && mostGoals!==best?line('🔥','Målrikast: <b>'+mostGoals.goalsFor+' mål</b> mot '+esc(mostGoals.opponent), shortDate(mostGoals)):'')
+        +(bestRun>=2?line('💪','Längsta sviten utan förlust: <b>'+bestRun+' matcher</b> i rad'):'')
+        +(comebacks?line('🔄', '<b>'+comebacks+'</b> '+(comebacks===1?'gång':'gånger')+' tog laget poäng trots att motståndarna gjorde mål i första perioden'):'')
+        +line('🗓️','Första matchen '+shortDate(ps[0])+', sista '+shortDate(ps[ps.length-1]))
+        +'</div>';
+      const tk=Object.keys(tours);
+      if(tk.length){
+        h+='<div class="ss-section"><h3>Turneringar &amp; cuper</h3>'
+          +tk.map(t=>{ const r=tours[t]; return line('🏟️','<b>'+esc(t)+'</b>', r.n+' matcher · '+r.w+'V '+r.d+'O '+r.l+'F · '+r.gf+'–'+r.ga); }).join('')
+          +'</div>';
+      }
+      h+='<p style="text-align:center;font-size:15px;margin:14px 0 4px;">Tack för säsongen! 💛🖤</p>';
+      return h;
+    }
+    window.openSeasonSummary=(y)=>{
+      y=y||summaryYear();
+      document.getElementById('ss-title').textContent='Säsongen '+y;
+      document.getElementById('ss-body').innerHTML=buildSeasonSummary(y);
+      document.getElementById('ss-share-status').textContent='';
+      document.getElementById('season-summary-view').dataset.year=y;
+      document.getElementById('season-summary-view').style.display='block';
+      document.body.style.overflow='hidden';
+      try{ history.replaceState(null,'','#sasong-'+y); }catch(e){}
+    };
+    window.closeSeasonSummary=()=>{
+      document.getElementById('season-summary-view').style.display='none';
+      document.body.style.overflow='';
+      try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){}
+    };
+    document.getElementById('season-summary-view').addEventListener('click',function(e){ if(e.target===this) window.closeSeasonSummary(); });
+    window.shareSeasonSummary=async()=>{
+      const y=document.getElementById('season-summary-view').dataset.year;
+      const url=location.origin+location.pathname+'#sasong-'+y;
+      const st=document.getElementById('ss-share-status');
+      try{
+        if(navigator.share){ await navigator.share({title:'Stocksunds IF P2015 – säsongen '+y, url}); return; }
+        await navigator.clipboard.writeText(url);
+        st.textContent='✅ Länken är kopierad: '+url; st.className='roster-status ok';
+      }catch(e){ if(e && e.name==='AbortError') return; st.textContent='Kopiera länken: '+url; st.className='roster-status'; }
+    };
+    // Öppna direkt om länken har #sasong-ÅÅÅÅ
+    { const hm=/^#sasong-(\d{4})$/.exec(location.hash); if(hm) pendingSummaryYear=hm[1]; }
+    function maybeOpenPendingSummary(){
+      if(!pendingSummaryYear || !matches.length) return;
+      const y=pendingSummaryYear; pendingSummaryYear=null;
+      switchTab('stats'); window.openSeasonSummary(y);
     }
 
     // ── TRUPP (Firestore: config/roster) ──────────────────────────────────────
@@ -1543,6 +1825,8 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       renderMatchList();
     };
     function renderPublicMatches(){
+      renderSeasonThanks();
+      renderMatchdayHero();
       pubSeasonFilter=renderSeasonBar('pub-season-filter-bar',pubSeasonFilter,'setPublicSeasonFilter');
       let filtered=pubFilter==='all'?matches.slice():matches.filter(m=>effectiveMatchType(m)===pubFilter);
       if(pubLagFilter!=='all')filtered=filtered.filter(m=>matchPassesLagFilter(m,pubLagFilter));
@@ -1693,7 +1977,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         type:document.getElementById('f-type').value,goalsFor:gf!==''?+gf:null,goalsAgainst:gaTotal,
         periodsAgainst:anyPeriod?[p1,p2,p3]:null,
         notes:document.getElementById('f-notes').value.trim(),
-        turnering:document.getElementById('f-turnering').value.trim()||null,lag:lagPick||null,format:+document.getElementById('f-format').value||7,scorers:getScorers(),assists:getAssists(),lineup:null};
+        turnering:document.getElementById('f-turnering').value.trim()||null,lag:lagPick||null,format:+document.getElementById('f-format').value||7,tid:document.getElementById('f-tid').value||null,scorers:getScorers(),assists:getAssists(),lineup:null};
       const btn=document.getElementById('btn-save-match');
       btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
       try{
@@ -1710,7 +1994,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       document.getElementById('f-goals-for').value='';
       document.getElementById('f-ga-p1').value='';document.getElementById('f-ga-p2').value='';document.getElementById('f-ga-p3').value='';
       document.getElementById('f-notes').value='';document.getElementById('f-lag').value='';
-      document.getElementById('f-turnering').value='';document.getElementById('f-format').value=String(lastUsedFormat());
+      document.getElementById('f-turnering').value='';document.getElementById('f-format').value=String(lastUsedFormat());document.getElementById('f-tid').value='';
       document.getElementById('scorer-rows').innerHTML='';document.getElementById('assist-rows').innerHTML='';
     }
     window.cancelEdit=()=>{editingId=null;document.getElementById('form-title').textContent='Ny match';document.getElementById('btn-cancel-edit').style.display='none';clearForm();};
@@ -1727,6 +2011,8 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       document.getElementById('f-ga-p3').value=pa&&pa[2]!=null?pa[2]:'';
       document.getElementById('f-notes').value=m.notes||'';
       document.getElementById('f-format').value=String(matchFormat(m));
+      const ko=matchKickoffMinutes(m);
+      document.getElementById('f-tid').value=ko!=null?String(Math.floor(ko/60)).padStart(2,'0')+':'+String(ko%60).padStart(2,'0'):'';
       document.getElementById('f-turnering').value=resolveTurnering(m);
       const lagVal=m.lag==='Gul'||m.lag==='Svart'?m.lag:resolveMatchLag(m);
       document.getElementById('f-lag').value=(lagVal==='Gul'||lagVal==='Svart')?lagVal:'';
@@ -1975,6 +2261,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
       statsFormatFilter=renderFormatBar('stats-format-filter-bar',statsFormatFilter,'setStatsFormatFilter');
       ms=ms.filter(m=>formatPasses(m,statsFormatFilter));
       renderStatsTurBar();
+      renderSeasonSummaryButton();
       renderTournamentCard(ms.slice());
       if(statsTurFilter!=='all')ms=ms.filter(m=>resolveTurnering(m)===statsTurFilter);
       const played=ms.filter(m=>m.goalsFor!=null&&m.goalsAgainst!=null);
@@ -2021,7 +2308,7 @@ header h1 span{display:block;font-size:.55em;font-weight:600;color:var(--text-mu
         +'</div>'
       ).join(''):'<div style="color:var(--text-muted);font-size:13px;">Inga assist registrerade</div>';
 
-      // Clean halves
+      // Hållna perioder (0 insläppta i perioden)
       const withPeriods=played.filter(m=>Array.isArray(m.periodsAgainst)&&m.periodsAgainst.length===3);
       const totalPossible=withPeriods.length*3;
       const cleanCounts=[0,0,0];
